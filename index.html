@@ -236,7 +236,7 @@ const data = await resp.json();
             const infoInicio = data.data_inicio ? ` O acesso tem duração de um ano.` : "";
             alert("Poxa artista, seu acesso expirou. Adquira o curso novamente para ter acesso às aulas e aos feedbacks." + infoInicio);
           } else if (data && data.status === "nao_cadastrado") {
-            alert("Seu email não consta em nosso cadastro de alunos. Caso tenha adquirido o curso agora, espere até o próximo mês para logar. Aproveite esse tempo para estudar as aulas!");
+            alert("Seu email não consta em nosso cadastro de alunos. Certifique que é o e-mail utilizado para comprar o seu curso. Caso tenha adquirido o curso agora, espere até o próximo mês para logar. Aproveite esse tempo para estudar as aulas!");
           } else if (data && data.status === "curso_invalido") {
             alert("Curso inválido. Tente selecionar novamente.");
           } else {
@@ -293,6 +293,7 @@ const data = await resp.json();
   </div>
 </body>
 </html>
+
 
 
 
