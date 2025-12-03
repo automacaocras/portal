@@ -237,7 +237,7 @@ const data = await resp.json();
           if (data && data.status === "senha_errada") {
             alert("Senha incorreta.");
           } else if (data && data.status === "senha_indefinida") {
-            alert('Não encontramos a sua senha. Escreva para contato@editoracras.com.');
+            alert('Não encontramos a sua senha. Escreva para contato@editoracras.com ou com o número +55 11 99815-7770.');
           } else if (data && data.status === "inativo") {
             const infoInicio = data.data_inicio ? ` O acesso tem duração de um ano.` : "";
             alert("Poxa artista, seu acesso expirou. Adquira o curso novamente para ter acesso às aulas e aos feedbacks." + infoInicio);
@@ -299,6 +299,7 @@ const data = await resp.json();
   </div>
 </body>
 </html>
+
 
 
 
