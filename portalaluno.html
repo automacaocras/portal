@@ -429,7 +429,7 @@ function applyAllowUploadUI(){
   if (!bootstrap?.allowUpload){
     btnEnvio.removeAttribute("disabled");
     btnEnvio.setAttribute("aria-disabled","true");
-    btnEnvio.textContent = "Envio indisponível";
+    btnEnvio.textContent = "Envio de exercício indisponível";
     btnEnvio.style.opacity = "";
     if (prazoNote) prazoNote.style.display = "none";
   } else {
@@ -986,6 +986,7 @@ document.addEventListener("DOMContentLoaded", async () => {
   </div>
 </body>
 </html>
+
 
 
 
