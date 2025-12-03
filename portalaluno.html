@@ -382,7 +382,7 @@ function updateLiveBadgeFromBootstrap(){
     return;
   }
 
-  const durMin    = Number(fb.duracaoMin ?? 90);
+  const durMin    = Number(fb.duracaoMin ?? 80);
   const thisStart = new Date(thisISO).getTime();
   const thisEnd   = thisStart + durMin * 60 * 1000;
   const nextStart = new Date(nextISO).getTime();
@@ -986,6 +986,7 @@ document.addEventListener("DOMContentLoaded", async () => {
   </div>
 </body>
 </html>
+
 
 
 
