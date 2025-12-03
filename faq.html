@@ -86,6 +86,55 @@
       font-size: 20px;
     }
   }
+
+  .faq-item {
+  margin-bottom: 16px;
+  border-bottom: 1px solid #e5e7eb;
+  padding-bottom: 16px;
+}
+
+.faq-question {
+  width: 100%;
+  background: none;
+  border: none;
+  padding: 12px 0;
+  text-align: left;
+  font-size: 16px;
+  font-weight: 600;
+  color: #1d2433;
+  cursor: pointer;
+  position: relative;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.faq-question .arrow {
+  width: 18px;
+  height: 18px;
+  display: inline-block;
+  background-image: url('data:image/svg+xml;utf8,<svg width="24" height="24" xmlns="http://www.w3.org/2000/svg"><path fill="%23909ab0" d="M7 10l5 5 5-5z"/></svg>');
+  background-size: contain;<
+  transition: transform 0.25s ease;
+}
+
+.faq-question.active .arrow {
+  transform: rotate(180deg);
+}
+
+.faq-answer {
+  max-height: 0;
+  overflow: hidden;
+  font-size: 15px;
+  color: #374151;
+  line-height: 1.6;
+  transition: max-height 0.3s ease;
+}
+
+.faq-answer.open {
+  max-height: 500px; /* suficiente para qualquer texto */
+}
+
 </style>
 </head>
 <body>
@@ -202,6 +251,20 @@
   <div id="global-loading" aria-live="polite" aria-busy="true" style="display:none">
     <div class="global-loading-bubble">Carregando…</div>
   </div>
+
+<script>
+  document.querySelectorAll(".faq-question").forEach(btn => {
+    btn.addEventListener("click", () => {
+      const answer = btn.nextElementSibling;
+
+      btn.classList.toggle("active");
+      answer.classList.toggle("open");
+    });
+  });
+</script>
+
+  
 </body>
 </html>
+
 
