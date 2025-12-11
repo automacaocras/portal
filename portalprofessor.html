@@ -970,13 +970,78 @@ function openExerciseModal(rowIndex, imgIndexFrom1) {
   showExerciseModal();
 }
 
+function openExerciseModal(rowIndex, imgIndexFrom1) {
+  const row = exercisesData[rowIndex];
+  if (!row) return;
+
+  modalState.rowIndex = rowIndex;
+  modalState.images = buildImagesArrayForRow(row);
+  modalState.currentIdx = (imgIndexFrom1 - 1) || 0;
+
+  const nome   = row["Nome"] || "";
+  const modulo = row["Módulo"] || row["Modulo"] || "";
+  const aula   = row["Aula"] || "";
+  const desc   = row["Descrição"] || row["Descricao"] || "";
+
+  document.getElementById("exModalTitle").textContent = nome;
+  document.getElementById("exModalSub").textContent = [modulo, aula].filter(Boolean).join(" - ");
+  document.getElementById("exModalDesc").textContent = desc;
+
+  updateModalImage();
+  showExerciseModal();
+}
+
+/* 👇 COLE ESTA FUNÇÃO AQUI 👇 */
+function getDriveImageUrl(url) {
+  if (!url) return "";
+
+  try {
+    const u = new URL(url);
+
+    // se não for link do Drive, devolve como está
+    if (!u.hostname.includes("drive.google.com")) {
+      return url;
+    }
+
+    let fileId = null;
+
+    // formato padrão: https://drive.google.com/file/d/ARQUIVO_ID/view
+    const match1 = u.pathname.match(/\/file\/d\/([^/]+)/);
+    if (match1 && match1[1]) {
+      fileId = match1[1];
+    }
+
+    // formatos tipo ...?id=ARQUIVO_ID
+    if (!fileId) {
+      const idParam = u.searchParams.get("id");
+      if (idParam) fileId = idParam;
+    }
+
+    // se conseguiu achar o ID, monta URL de imagem direta
+    if (fileId) {
+      return `https://drive.google.com/uc?export=view&id=${fileId}`;
+    }
+
+    // fallback: devolve a original
+    return url;
+  } catch (e) {
+    return url;
+  }
+}
+/* ☝️ ATÉ AQUI ☝️ */
 
 function updateModalImage() {
-  const frame = document.getElementById("exModalFrame");
+  const imgEl = document.getElementById("exModalImg");
   const rawUrl = modalState.images[modalState.currentIdx];
 
-  // usamos o link exatamente como vem da planilha (Drive viewer)
-  frame.src = rawUrl || "";
+  imgEl.src = getDriveImageUrl(rawUrl);
+}
+
+function updateModalImage() {
+  const imgEl = document.getElementById("exModalImg");
+  const rawUrl = modalState.images[modalState.currentIdx];
+
+  imgEl.src = getDriveImageUrl(rawUrl);
 }
 
 
@@ -1104,9 +1169,9 @@ btnCopy.addEventListener("click", async () => {
       <div id="exModalSub"></div>
     </div>
 
-   <div class="ex-modal-body">
+<div class="ex-modal-body">
   <button class="ex-nav ex-nav-prev" type="button">&#8249;</button>
-  <iframe id="exModalFrame" src="" title="Exercício" allow="fullscreen"></iframe>
+  <img id="exModalImg" src="" alt="Exercício">
   <button class="ex-nav ex-nav-next" type="button">&#8250;</button>
 </div>
 
@@ -1124,6 +1189,7 @@ btnCopy.addEventListener("click", async () => {
   
 </body>
 </html>
+
 
 
 
