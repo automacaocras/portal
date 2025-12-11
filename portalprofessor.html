@@ -971,8 +971,6 @@ function openExerciseModal(rowIndex, imgIndexFrom1) {
 }
 
 
-
-/* 👇 COLE ESTA FUNÇÃO AQUI 👇 */
 function getDriveImageUrl(url) {
   if (!url) return "";
 
@@ -998,9 +996,10 @@ function getDriveImageUrl(url) {
       if (idParam) fileId = idParam;
     }
 
-    // se conseguiu achar o ID, monta URL de imagem direta
+    // se conseguiu achar o ID, monta URL de thumbnail (mais estável para <img>)
     if (fileId) {
-      return `https://drive.google.com/uc?export=view&id=${fileId}`;
+      // sz=w1000 controla o tamanho máximo (pode ajustar se quiser menor/maior)
+      return `https://drive.google.com/thumbnail?id=${fileId}&sz=w1000`;
     }
 
     // fallback: devolve a original
@@ -1009,7 +1008,8 @@ function getDriveImageUrl(url) {
     return url;
   }
 }
-/* ☝️ ATÉ AQUI ☝️ */
+
+
 
 function updateModalImage() {
   const imgEl = document.getElementById("exModalImg");
@@ -1020,30 +1020,20 @@ function updateModalImage() {
     return;
   }
 
-  // monta URL tratada para Drive (quando for o caso)
   const finalUrl = getDriveImageUrl(rawUrl);
 
-  console.log("🔎 ExModal URL:", {
-    rawUrl,
-    finalUrl
-  });
+  imgEl.style.display = "block";
 
-  // se der erro para carregar a URL tratada, tenta a original
+  console.log("🔎 ExModal URL:", { rawUrl, finalUrl });
+
   imgEl.onerror = function () {
-    console.warn("Erro carregando imagem com URL tratada, tentando URL original…", finalUrl);
-
-    if (finalUrl !== rawUrl) {
-      imgEl.onerror = null;           // evita loop infinito
-      imgEl.src = rawUrl;             // tenta a URL original
-    }
+    console.warn("Erro carregando imagem, ocultando e deixando só o botão Baixar.", finalUrl);
+    imgEl.onerror = null;
+    imgEl.style.display = "none";
   };
 
   imgEl.src = finalUrl;
 }
-
-
-
-
 
 
 function showExerciseModal() {
@@ -1188,6 +1178,7 @@ btnCopy.addEventListener("click", async () => {
   
 </body>
 </html>
+
 
 
 
