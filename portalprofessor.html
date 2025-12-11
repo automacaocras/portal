@@ -990,16 +990,16 @@ function getDriveImageUrl(url) {
       fileId = match1[1];
     }
 
-    // formatos tipo ...?id=ARQUIVO_ID
+    // formato ...?id=ARQUIVO_ID
     if (!fileId) {
       const idParam = u.searchParams.get("id");
       if (idParam) fileId = idParam;
     }
 
-    // se conseguiu achar o ID, monta URL de thumbnail (mais estável para <img>)
+    // se conseguiu achar o ID, monta URL de visualização completa
     if (fileId) {
-      // sz=w1000 controla o tamanho máximo (pode ajustar se quiser menor/maior)
-      return `https://drive.google.com/thumbnail?id=${fileId}&sz=w1000`;
+      // essa URL mostra a imagem inteira (sem crop de thumbnail)
+      return `https://drive.google.com/uc?export=view&id=${fileId}`;
     }
 
     // fallback: devolve a original
@@ -1178,6 +1178,7 @@ btnCopy.addEventListener("click", async () => {
   
 </body>
 </html>
+
 
 
 
