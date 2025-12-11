@@ -964,21 +964,47 @@ function openExerciseModal(rowIndex, imgIndexFrom1) {
   showExerciseModal();
 }
 
-function updateModalImage() {
-  const imgEl = document.getElementById("exModalImg");
-  const url = modalState.images[modalState.currentIdx];
+function getDriveViewUrl(url) {
+  try {
+    if (!url) return "";
 
-  // tenta extrair o ID do arquivo do Google Drive
-  const match = url && url.match(/\/d\/([^\/]+)\//);
-  if (match) {
-    const fileId = match[1];
-    // URL própria para exibir a imagem (view)
-    imgEl.src = `https://drive.google.com/uc?export=view&id=${fileId}`;
-  } else {
-    // se não for link do Drive, usa como está
-    imgEl.src = url;
+    // Só tratamos links do Drive
+    if (url.includes("drive.google.com")) {
+      const u = new URL(url);
+
+      // Formato: https://drive.google.com/file/d/ARQUIVO_ID/...
+      const parts = u.pathname.split("/");
+      const dIndex = parts.indexOf("d");
+      let fileId = null;
+
+      if (dIndex !== -1 && parts[dIndex + 1]) {
+        fileId = parts[dIndex + 1];
+      }
+
+      // Formato: https://drive.google.com/uc?export=view&id=ARQUIVO_ID
+      if (!fileId) {
+        const idParam = u.searchParams.get("id");
+        if (idParam) fileId = idParam;
+      }
+
+      if (fileId) {
+        return `https://drive.google.com/uc?export=view&id=${fileId}`;
+      }
+    }
+
+    // Se não for Drive (ou der erro), devolve a URL original
+    return url;
+  } catch (e) {
+    return url;
   }
 }
+
+function updateModalImage() {
+  const imgEl = document.getElementById("exModalImg");
+  const rawUrl = modalState.images[modalState.currentIdx];
+  imgEl.src = getDriveViewUrl(rawUrl);
+}
+
 
 
 function showExerciseModal() {
@@ -1038,27 +1064,36 @@ btnDownload.addEventListener("click", () => {
 
 
 btnCopy.addEventListener("click", async () => {
-  try {
-    const url = modalState.images[modalState.currentIdx];
+  const rawUrl = modalState.images[modalState.currentIdx];
+  const url = getDriveViewUrl(rawUrl); // usa a mesma função da imagem
 
-    const match = url && url.match(/\/d\/([^\/]+)\//);
-    let finalUrl = url;
-
-    if (match) {
-      const fileId = match[1];
-      // usa a URL de view para copiar a imagem em si
-      finalUrl = `https://drive.google.com/uc?export=view&id=${fileId}`;
+  // Tentativa moderna (navigator.clipboard)
+  if (navigator.clipboard && navigator.clipboard.writeText) {
+    try {
+      await navigator.clipboard.writeText(url);
+      alert("Link copiado para a área de transferência.");
+      return;
+    } catch (e) {
+      // se der erro, cai pro fallback abaixo
     }
-
-    const res = await fetch(finalUrl);
-    const blob = await res.blob();
-    const item = new ClipboardItem({ [blob.type]: blob });
-    await navigator.clipboard.write([item]);
-    alert("Imagem copiada!");
-  } catch {
-    alert("Não foi possível copiar. Use o botão Baixar.");
   }
+
+  // Fallback mais antigo (input escondido + execCommand)
+  const tmp = document.createElement("input");
+  tmp.value = url;
+  document.body.appendChild(tmp);
+  tmp.select();
+
+  try {
+    document.execCommand("copy");
+    alert("Link copiado para a área de transferência.");
+  } catch (e) {
+    alert("Não foi possível copiar automaticamente. Use o botão Baixar ou copie o link manualmente.");
+  }
+
+  tmp.remove();
 });
+
 
 });
 
@@ -1110,6 +1145,7 @@ btnCopy.addEventListener("click", async () => {
   
 </body>
 </html>
+
 
 
 
