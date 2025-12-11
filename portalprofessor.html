@@ -269,6 +269,12 @@
   object-fit: contain;
 }
 
+  #exModalFrame {
+  width: 100%;
+  height: 100%;
+  border: none;
+}
+  
 .ex-nav {
   position: absolute;
   top: 50%;
@@ -965,59 +971,14 @@ function openExerciseModal(rowIndex, imgIndexFrom1) {
 }
 
 
-
-// NOVO – gera uma URL "direta" de imagem a partir do link do Drive
-function getDriveViewUrl(url) {
-  try {
-    if (!url) return "";
-
-    // Se já for uma URL "direta" do Google (googleusercontent), usa como está
-    if (url.includes("googleusercontent.com")) {
-      return url;
-    }
-
-    // Só tratamos links do Drive
-    if (url.includes("drive.google.com")) {
-      const u = new URL(url);
-
-      // Formato padrão: https://drive.google.com/file/d/ARQUIVO_ID/...
-      const parts = u.pathname.split("/");
-      const dIndex = parts.indexOf("d");
-      let fileId = null;
-
-      if (dIndex !== -1 && parts[dIndex + 1]) {
-        fileId = parts[dIndex + 1];
-      }
-
-      // Outro formato: https://drive.google.com/open?id=ARQUIVO_ID
-      if (!fileId) {
-        const idParam = u.searchParams.get("id");
-        if (idParam) fileId = idParam;
-      }
-
-      // Se achou o ID, monta uma URL direta de download/visualização
-      if (fileId) {
-        // `export=download` costuma funcionar melhor como imagem também
-        return `https://drive.google.com/uc?export=download&id=${fileId}`;
-      }
-    }
-
-    // Se não for Drive (ou der erro), devolve a URL original
-    return url;
-  } catch (e) {
-    return url;
-  }
-}
-
-
-
-  
-
 function updateModalImage() {
-  const imgEl = document.getElementById("exModalImg");
+  const frame = document.getElementById("exModalFrame");
   const rawUrl = modalState.images[modalState.currentIdx];
-  imgEl.src = getDriveViewUrl(rawUrl);
+
+  // usamos o link exatamente como vem da planilha (Drive viewer)
+  frame.src = rawUrl || "";
 }
+
 
 
 
@@ -1078,29 +1039,37 @@ btnDownload.addEventListener("click", () => {
 
 
 btnCopy.addEventListener("click", async () => {
-  const rawUrl = modalState.images[modalState.currentIdx];
-  const url = getDriveViewUrl(rawUrl); // URL direta da imagem
-
-  // Verifica se o navegador suporta copiar IMAGEM
-  if (!navigator.clipboard || !window.ClipboardItem) {
-    alert("Seu navegador não permite copiar a imagem automaticamente. Use o botão Baixar.");
+  const url = modalState.images[modalState.currentIdx];
+  if (!url) {
+    alert("Nenhum link disponível para copiar.");
     return;
   }
 
-  try {
-    // Tenta baixar a imagem
-    const res = await fetch(url);
-    const blob = await res.blob();
-
-    const item = new ClipboardItem({ [blob.type]: blob });
-    await navigator.clipboard.write([item]);
-
-    alert("Imagem copiada! Agora é só colar com Ctrl+V no seu programa de desenho.");
-  } catch (e) {
-    console.error(e);
-    alert("Não foi possível copiar a imagem automaticamente. Use o botão Baixar.");
+  // tenta API moderna
+  if (navigator.clipboard && navigator.clipboard.writeText) {
+    try {
+      await navigator.clipboard.writeText(url);
+      alert("Link copiado para a área de transferência.");
+      return;
+    } catch (e) {
+      // cai no fallback
+    }
   }
+
+  // fallback antigo
+  const tmp = document.createElement("input");
+  tmp.value = url;
+  document.body.appendChild(tmp);
+  tmp.select();
+  try {
+    document.execCommand("copy");
+    alert("Link copiado para a área de transferência.");
+  } catch (e) {
+    alert("Não foi possível copiar automaticamente. Copie o link manualmente.");
+  }
+  tmp.remove();
 });
+
 
 
 
@@ -1135,17 +1104,18 @@ btnCopy.addEventListener("click", async () => {
       <div id="exModalSub"></div>
     </div>
 
-    <div class="ex-modal-body">
-      <button class="ex-nav ex-nav-prev" type="button">&#8249;</button>
-      <img id="exModalImg" src="" alt="Exercício">
-      <button class="ex-nav ex-nav-next" type="button">&#8250;</button>
-    </div>
+   <div class="ex-modal-body">
+  <button class="ex-nav ex-nav-prev" type="button">&#8249;</button>
+  <iframe id="exModalFrame" src="" title="Exercício" allow="fullscreen"></iframe>
+  <button class="ex-nav ex-nav-next" type="button">&#8250;</button>
+</div>
+
 
     <div class="ex-modal-footer">
       <div id="exModalDesc"></div>
       <div class="ex-modal-actions">
         <button id="exBtnDownload" type="button">Baixar</button>
-        <button id="exBtnCopy" type="button">Copiar</button>
+        <button id="exBtnCopy" type="button">Copiar Link</button>
       </div>
     </div>
   </div>
@@ -1154,6 +1124,7 @@ btnCopy.addEventListener("click", async () => {
   
 </body>
 </html>
+
 
 
 
