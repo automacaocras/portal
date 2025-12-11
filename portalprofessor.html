@@ -89,7 +89,16 @@
   .links-box a{display:block;word-break:break-all;margin:8px 0;padding:10px 12px;
     background:#f7f7ff;border-radius:10px;text-decoration:underline;color:#1d2433;text-align:center}
   .field{margin:10px auto;max-width:720px}
-  .field input,.field textarea{width:100%;padding:12px;border:1px solid #cfd6e4;border-radius:10px;background:#fff;font-size:16px}
+ .field input,
+.field textarea,
+.field select{
+  width:100%;
+  padding:12px;
+  border:1px solid #cfd6e4;
+  border-radius:10px;
+  background:#fff;
+  font-size:16px;
+}
   .field textarea{min-height:110px}
   .btn-primary{display:block;width:100%;max-width:420px;margin:18px auto 6px;padding:14px 18px;
     border:none;border-radius:12px;background:#f4c200;color:#111;font-weight:800;cursor:pointer}
@@ -266,8 +275,27 @@
       <h3>Próxima aula ao vivo</h3>
       <div class="field"><input   id="fLink"  placeholder="Link"></div>
       <div class="field"><input   id="fSenha" placeholder="Senha"></div>
-      <div class="field"><input   id="fHora"  placeholder="Hora (ex.: 20:00)"></div>
-      <div class="field"><input   id="fDia"   placeholder="Dia (ex.: quinta-feira)"></div>
+<div class="field">
+  <select id="fHora">
+    <option value="">Selecione o horário</option>
+    <!-- opções serão preenchidas via JS -->
+  </select>
+</div>
+
+<div class="field">
+  <select id="fDia">
+    <option value="">Selecione o dia</option>
+    <option value="segunda-feira">Segunda-feira</option>
+    <option value="terça-feira">Terça-feira</option>
+    <option value="quarta-feira">Quarta-feira</option>
+    <option value="quinta-feira">Quinta-feira</option>
+    <option value="sexta-feira">Sexta-feira</option>
+    <option value="sábado">Sábado</option>
+    <option value="domingo">Domingo</option>
+  </select>
+</div>
+
+      
       <div class="field"><textarea id="fInfo"  placeholder="Info"></textarea></div>
 
       <button id="btnEnviarLive" class="btn-primary" data-busy>Atualizar</button>
@@ -312,29 +340,68 @@
     try{ const u = new URL(url); return u.protocol === 'http:' || u.protocol === 'https:'; }
     catch{ return false; }
   }
-  function isValidTime(hhmm){ return /^([01]\d|2[0-3]):([0-5]\d)$/.test(hhmm); }
+ 
   function markInvalid(el, state=true){ if (!el) return; el.classList.toggle('is-invalid', !!state); }
-  function clearInvalidOnInput(sel){
-    const el = qs(sel); if (!el) return;
-    el.addEventListener('input', ()=> markInvalid(el,false));
-    el.addEventListener('blur',  ()=> markInvalid(el,false));
-  }
-  function validateLiveForm(){
-    const fLink = qs('#fLink'), fHora = qs('#fHora'), fDia  = qs('#fDia');
-    const link = fLink.value.trim(), hora = fHora.value.trim(), dia  = fDia.value.trim();
-    [fLink,fHora,fDia].forEach(el=>markInvalid(el,false));
-    const errors = [];
-    if (!link || !isValidURL(link)){ errors.push('• Informe um LINK válido (http/https).'); markInvalid(fLink,true); }
-    if (!hora || !isValidTime(hora)){ errors.push('• Informe a HORA no formato 24h (ex.: 20:00).'); markInvalid(fHora,true); }
-    if (!dia){ errors.push('• Informe o DIA (ex.: quinta-feira).'); markInvalid(fDia,true); }
-    if (errors.length){
-      alert('Verifique os campos obrigatórios:\n\n' + errors.join('\n'));
-      const firstInvalid = [fLink,fHora,fDia].find(el => el.classList.contains('is-invalid'));
-      if (firstInvalid) firstInvalid.focus();
-      return false;
+function clearInvalidOnInput(sel){
+  const el = qs(sel); if (!el) return;
+  el.addEventListener('input', ()=> markInvalid(el,false));
+  el.addEventListener('blur',  ()=> markInvalid(el,false));
+  el.addEventListener('change',()=> markInvalid(el,false));
+}
+
+  function populateHoraSelect(){
+  const sel = qs('#fHora');
+  if (!sel) return;
+
+  sel.innerHTML = '<option value="">Selecione o horário</option>';
+
+  for (let h = 0; h < 24; h++){
+    for (let m = 0; m < 60; m += 30){
+      const hh = String(h).padStart(2, '0');
+      const mm = String(m).padStart(2, '0');
+      const value = `${hh}:${mm}`;
+      const opt = document.createElement('option');
+      opt.value = value;
+      opt.textContent = value;
+      sel.appendChild(opt);
     }
-    return { link, hora, dia };
   }
+}
+
+function validateLiveForm(){
+  const fLink = qs('#fLink'),
+        fHora = qs('#fHora'),
+        fDia  = qs('#fDia');
+
+  const link = fLink.value.trim(),
+        hora = fHora.value.trim(),
+        dia  = fDia.value.trim();
+
+  [fLink, fHora, fDia].forEach(el => markInvalid(el,false));
+  const errors = [];
+
+  if (!link || !isValidURL(link)){
+    errors.push('• Informe um LINK válido (http/https).');
+    markInvalid(fLink,true);
+  }
+  if (!hora){
+    errors.push('• Selecione a HORA da aula.');
+    markInvalid(fHora,true);
+  }
+  if (!dia){
+    errors.push('• Selecione o DIA da aula.');
+    markInvalid(fDia,true);
+  }
+
+  if (errors.length){
+    alert('Verifique os campos obrigatórios:\n\n' + errors.join('\n'));
+    const firstInvalid = [fLink,fHora,fDia].find(el => el.classList.contains('is-invalid'));
+    if (firstInvalid) firstInvalid.focus();
+    return false;
+  }
+  return { link, hora, dia };
+}
+
 
   function renderNextLive(src){
     const box = qs('#nextLive'), txt = qs('#nextLiveText'), a = qs('#nextLiveHref');
@@ -573,6 +640,7 @@
       renderNextLive(bootstrap.feedback);
       renderGravada(bootstrap.feedback);
     }
+populateHoraSelect();
 
     qs('#btnAbrirLive').addEventListener('click', () => { hide(qs('#home')); show(qs('#formLive')); window.scrollTo({top:0,behavior:'smooth'}); });
     qs('#btnAbrirGrav').addEventListener('click', () => { hide(qs('#home')); show(qs('#formGrav')); window.scrollTo({top:0,behavior:'smooth'}); });
@@ -686,5 +754,6 @@
 </div>
 </body>
 </html>
+
 
 
