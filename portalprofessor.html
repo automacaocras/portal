@@ -970,26 +970,7 @@ function openExerciseModal(rowIndex, imgIndexFrom1) {
   showExerciseModal();
 }
 
-function openExerciseModal(rowIndex, imgIndexFrom1) {
-  const row = exercisesData[rowIndex];
-  if (!row) return;
 
-  modalState.rowIndex = rowIndex;
-  modalState.images = buildImagesArrayForRow(row);
-  modalState.currentIdx = (imgIndexFrom1 - 1) || 0;
-
-  const nome   = row["Nome"] || "";
-  const modulo = row["Módulo"] || row["Modulo"] || "";
-  const aula   = row["Aula"] || "";
-  const desc   = row["Descrição"] || row["Descricao"] || "";
-
-  document.getElementById("exModalTitle").textContent = nome;
-  document.getElementById("exModalSub").textContent = [modulo, aula].filter(Boolean).join(" - ");
-  document.getElementById("exModalDesc").textContent = desc;
-
-  updateModalImage();
-  showExerciseModal();
-}
 
 /* 👇 COLE ESTA FUNÇÃO AQUI 👇 */
 function getDriveImageUrl(url) {
@@ -1037,12 +1018,6 @@ function updateModalImage() {
   imgEl.src = getDriveImageUrl(rawUrl);
 }
 
-function updateModalImage() {
-  const imgEl = document.getElementById("exModalImg");
-  const rawUrl = modalState.images[modalState.currentIdx];
-
-  imgEl.src = getDriveImageUrl(rawUrl);
-}
 
 
 
@@ -1189,6 +1164,7 @@ btnCopy.addEventListener("click", async () => {
   
 </body>
 </html>
+
 
 
 
