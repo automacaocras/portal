@@ -205,6 +205,138 @@
     .btn-band{ padding:14px 12px; font-size:15px; }
     .cell-clip{ max-width:180px; }
   }
+
+  /* ===== Modal de visualização de exercício ===== */
+.ex-modal {
+  position: fixed;
+  inset: 0;
+  z-index: 10000;
+  display: none;
+  align-items: center;
+  justify-content: center;
+}
+
+.ex-modal.is-open {
+  display: flex;
+}
+
+.ex-modal-backdrop {
+  position: absolute;
+  inset: 0;
+  background: rgba(0,0,0,0.65);
+}
+
+.ex-modal-dialog {
+  position: relative;
+  max-width: min(900px, 92vw);
+  max-height: 92vh;
+  background: #fff;
+  border-radius: 18px;
+  box-shadow: 0 14px 36px rgba(0,0,0,0.35);
+  padding: 18px 22px 16px;
+  display: flex;
+  flex-direction: column;
+  overflow: auto;
+  z-index: 1;
+}
+
+.ex-modal-close {
+  position: absolute;
+  top: 10px;
+  right: 14px;
+  border: none;
+  background: transparent;
+  font-size: 24px;
+  cursor: pointer;
+}
+
+.ex-modal-header { margin-bottom: 12px; }
+#exModalTitle { font-size: 18px; font-weight: 700; }
+#exModalSub { font-size: 14px; color:#555; }
+
+.ex-modal-body {
+  position: relative;
+  flex: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  overflow: hidden;
+}
+
+#exModalImg {
+  max-width: 100%;
+  max-height: 100%;
+  object-fit: contain;
+}
+
+.ex-nav {
+  position: absolute;
+  top: 50%;
+  transform: translateY(-50%);
+  border: none;
+  background: rgba(0,0,0,0.35);
+  color: #fff;
+  width: 38px;
+  height: 48px;
+  border-radius: 24px;
+  cursor: pointer;
+  font-size: 26px;
+}
+
+.ex-nav-prev { left: 8px; }
+.ex-nav-next { right: 8px; }
+
+.ex-modal-footer {
+  margin-top: 10px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+#exModalDesc { font-size: 14px; line-height: 1.4; }
+
+.ex-modal-actions {
+  display: flex;
+  justify-content: center;
+  gap: 12px;
+}
+
+.ex-modal-actions button {
+  border: none;
+  padding: 8px 18px;
+  border-radius: 999px;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+#exBtnDownload { background:#111; color:#fff; }
+#exBtnCopy { background:#f4c200; color:#111; }
+
+/* Botão "Envio 1/2/3" */
+.ex-link-btn {
+  background:none;
+  border:none;
+  padding:0;
+  color:#0066cc;
+  text-decoration:underline;
+  cursor:pointer;
+  font:inherit;
+}
+
+/* MOBILE */
+@media (max-width: 600px) {
+  .ex-modal-dialog {
+    width: 100%;
+    max-width: 100%;
+    padding: 14px 12px;
+    border-radius: 12px;
+  }
+  .ex-modal-body {
+    max-height: 60vh;
+  }
+}
+
+  
 </style>
 </head>
 <body>
@@ -333,6 +465,12 @@
   const hide = el => el.classList.add('hidden');
 
   let sessao = null, bootstrap = null;
+let exercisesData = [];
+let modalState = {
+  rowIndex: null,
+  images: [],
+  currentIdx: 0
+};
 
   function validEmail(v){ return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(v); }
 
@@ -484,42 +622,58 @@ function validateLiveForm(){
     table.insertBefore(cg, table.firstChild);
   }
 
-  function attachOverflowPreview(){
-    const root = document.querySelector('#exTable');
-    let pop = null;
+function attachOverflowPreview(){
+  const root = document.querySelector('#exTable');
+  if (!root) return;   // ✅ linha nova de proteção
 
-    function show(e){
-      const clip = e.currentTarget;
-      if (clip.scrollWidth <= clip.clientWidth) return;
-      if (pop) pop.remove();
-      pop = document.createElement('div');
-      pop.className = 'preview-pop';
-      pop.textContent = clip.dataset.full || clip.textContent || '';
-      document.body.appendChild(pop);
-      position(e);
-    }
-    function position(e){
-      if (!pop) return;
-      const pad = 8;
-      let x = (e.clientX || 20) + 14;
-      let y = (e.clientY || 20) + 14;
-      const vw = window.innerWidth, vh = window.innerHeight;
-      const r = pop.getBoundingClientRect();
-      if (x + r.width  + pad > vw) x = vw - r.width  - pad;
-      if (y + r.height + pad > vh) y = vh - r.height - pad;
-      pop.style.left = x + 'px';
-      pop.style.top  = y + 'px';
-    }
-    function hide(){ if (pop){ pop.remove(); pop = null; } }
+  let pop = null;
 
-    root.querySelectorAll('.cell-clip').forEach(el=>{
-      el.addEventListener('mouseenter', show);
-      el.addEventListener('mousemove', position);
-      el.addEventListener('mouseleave', hide);
-      el.addEventListener('click', show);
-    });
-    document.addEventListener('touchstart', () => { if (pop) { pop.remove(); pop=null; } }, {passive:true});
+  function show(e){
+    const clip = e.currentTarget;
+    if (clip.scrollWidth <= clip.clientWidth) return;
+    if (pop) pop.remove();
+    pop = document.createElement('div');
+    pop.className = 'preview-pop';
+    pop.textContent = clip.dataset.full || clip.textContent || '';
+    document.body.appendChild(pop);
+    position(e);
   }
+  function position(e){
+    if (!pop) return;
+    const pad = 8;
+    let x = (e.clientX || 20) + 14;
+    let y = (e.clientY || 20) + 14;
+    const vw = window.innerWidth, vh = window.innerHeight;
+    const r = pop.getBoundingClientRect();
+    if (x + r.width  + pad > vw) x = vw - r.width  - pad;
+    if (y + r.height + pad > vh) y = vh - r.height - pad;
+    pop.style.left = x + 'px';
+    pop.style.top  = y + 'px';
+  }
+  function hide(){ if (pop){ pop.remove(); pop = null; } }
+
+  root.querySelectorAll('.cell-clip').forEach(el=>{
+    el.addEventListener('mouseenter', show);
+    el.addEventListener('mousemove', position);
+    el.addEventListener('mouseleave', hide);
+    el.addEventListener('click', show);
+  });
+  document.addEventListener('touchstart', () => { if (pop) { pop.remove(); pop=null; } }, {passive:true});
+}
+
+
+
+
+  
+function attachModalTriggers() {
+  document.querySelectorAll(".ex-link-btn").forEach(btn => {
+    btn.addEventListener("click", e => {
+      const rowIndex = parseInt(e.currentTarget.dataset.rowIndex || "0", 10);
+      const imgIndex = parseInt(e.currentTarget.dataset.imgIndex || "1", 10);
+      openExerciseModal(rowIndex, imgIndex);
+    });
+  });
+}
 
   // ====== Exercícios – carregar tudo (sem paginação) ======
   const PAGE_SIZE = 100000;
@@ -545,72 +699,114 @@ function validateLiveForm(){
     return /descr/i.test(String(h || ""));
   }
 
-  async function fetchExercisesPreview() {
-    try{
-      setLoading(true, "Carregando exercícios…");
-      const params = new URLSearchParams({
-        action: "listExercisesPreview",
-        curso:  sessao.curso,
-        email:  sessao.email,
-        limit:  PAGE_SIZE,
-        offset: 0
-      });
-      const r = await fetch(`${API_URL}?${params.toString()}`, { cache:'no-store' });
-      if (!r.ok) throw new Error(`HTTP ${r.status}`);            /* ✅ */
-      const d = await r.json();
-      if (!d.ok) throw new Error(d.message || "Falha ao listar exercícios.");
+async function fetchExercisesPreview() {
+  try {
+    setLoading(true, "Carregando exercícios…");
 
-      const thead = document.querySelector("#exTable thead");
-      thead.innerHTML = "";
-      const trh = document.createElement("tr");
+    const params = new URLSearchParams({
+      action: "listExercisesPreview",
+      curso:  sessao.curso,
+      email:  sessao.email,
+      limit:  PAGE_SIZE,
+      offset: 0
+    });
+
+    const r = await fetch(`${API_URL}?${params.toString()}`, { cache: 'no-store' });
+    if (!r.ok) throw new Error(`HTTP ${r.status}`);
+    const d = await r.json();
+    if (!d.ok) throw new Error(d.message || "Falha ao listar exercícios.");
+
+    // Cabeçalho da tabela
+    const thead = document.querySelector("#exTable thead");
+    thead.innerHTML = "";
+    const trh = document.createElement("tr");
+    (d.headers || []).forEach(h => {
+      const th = document.createElement("th");
+      th.textContent = h;
+      trh.appendChild(th);
+    });
+    thead.appendChild(trh);
+
+    // Cache de headers para o modal
+    if (!bootstrap) bootstrap = {};
+    bootstrap.headersCache = d.headers || [];
+
+    setDescricaoWidth(bootstrap.headersCache);
+
+    // Corpo da tabela
+    const tbody = document.querySelector("#exTable tbody");
+    tbody.innerHTML = "";
+
+    // ✅ guarda todas as linhas para o modal
+    exercisesData = d.rows || [];
+
+    (d.rows || []).forEach((row, rowIndex) => {
+      const tr = document.createElement("tr");
+
       (d.headers || []).forEach(h => {
-        const th = document.createElement("th");
-        th.textContent = h;
-        trh.appendChild(th);
-      });
-      thead.appendChild(trh);
-
-      if (!bootstrap) bootstrap = {};
-      bootstrap.headersCache = d.headers || [];
-
-      setDescricaoWidth(bootstrap.headersCache);
-
-      const tbody = document.querySelector("#exTable tbody");
-      tbody.innerHTML = "";
-      (d.rows || []).forEach(row => {
-        const tr = document.createElement("tr");
-        (d.headers || []).forEach(h => {
-          const td = document.createElement("td");
-          const html = renderCellHTML(h, row[h]);
-          td.innerHTML = needsClip(h) ? wrapClipHTML(html) : html;
-          tr.appendChild(td);
-        });
-        tbody.appendChild(tr);
-      });
-
-      attachOverflowPreview();
-
-      const total = d.totalRows || 0;
-      const label = total === 1 ? "exercício" : "exercícios";
-      document.getElementById("exTotalText").textContent = `Total ${total} ${label}`;
-
-      if ((d.rows || []).length === 0) {
-        const tr = document.createElement("tr");
         const td = document.createElement("td");
-        td.colSpan = (d.headers || []).length || 1;
-        td.style.textAlign = "center";
-        td.style.color = "#666";
-        td.textContent = "Nenhum envio encontrado.";
-        tr.appendChild(td);
-        tbody.appendChild(tr);
-      }
+        const rawValue = row[h];
+        const s = String(rawValue || "").trim();
 
-    } catch(e){
-      alert("Erro: " + e.message);
-    } finally {
-      setLoading(false);
+        if (!s) {
+          td.textContent = "";
+          tr.appendChild(td);
+          return;
+        }
+
+        if (isLinkCol(h) && /^https?:\/\//i.test(s)) {
+          // coluna de link de imagem -> botão "Envio X"
+          const imgIdx = parseInt((h.match(/\d+/) || ["1"])[0], 10);
+          const btn = document.createElement("button");
+          btn.type = "button";
+          btn.className = "ex-link-btn";
+          btn.textContent = linkLabelFromHeader(h); // "Envio 1", "Envio 2"...
+          btn.dataset.rowIndex = rowIndex;
+          btn.dataset.imgIndex = imgIdx;
+          td.appendChild(btn);
+        } else {
+          // outras colunas normais
+          const html = renderCellHTML(h, rawValue);
+          td.innerHTML = needsClip(h) ? wrapClipHTML(html) : html;
+        }
+
+        tr.appendChild(td);
+      });
+
+      tbody.appendChild(tr);
+    });
+
+    // textos longos com tooltip
+    attachOverflowPreview();
+    // conecta cliques dos botões "Envio X" ao modal
+    attachModalTriggers();
+
+    // Total de exercícios
+    const total = d.totalRows || 0;
+    const label = total === 1 ? "exercício" : "exercícios";
+    document.getElementById("exTotalText").textContent = `Total ${total} ${label}`;
+
+    // Nenhum envio
+    if ((d.rows || []).length === 0) {
+      const tr = document.createElement("tr");
+      const td = document.createElement("td");
+      td.colSpan = (d.headers || []).length || 1;
+      td.style.textAlign = "center";
+      td.style.color = "#666";
+      td.textContent = "Nenhum envio encontrado.";
+      tr.appendChild(td);
+      tbody.appendChild(tr);
     }
+
+  } catch (e) {
+    alert("Erro: " + e.message);
+  } finally {
+    setLoading(false);
   }
+}
+
+
+  
 
   document.addEventListener('DOMContentLoaded', boot);
 
@@ -736,6 +932,100 @@ populateHoraSelect();
       setLoading(false);
     }
   }
+function buildImagesArrayForRow(row) {
+  const images = [];
+  (bootstrap?.headersCache || []).forEach(h => {
+    if (isLinkCol(h)) {
+      const url = row[h];
+      if (url) images.push(url);
+    }
+  });
+  return images;
+}
+
+function openExerciseModal(rowIndex, imgIndexFrom1) {
+  const row = exercisesData[rowIndex];
+  if (!row) return;
+
+  modalState.rowIndex = rowIndex;
+  modalState.images = buildImagesArrayForRow(row);
+  modalState.currentIdx = (imgIndexFrom1 - 1) || 0;
+
+  const nome   = row["Nome"] || "";
+  const modulo = row["Módulo"] || row["Modulo"] || "";
+  const aula   = row["Aula"] || "";
+  const desc   = row["Descrição"] || row["Descricao"] || "";
+
+  document.getElementById("exModalTitle").textContent = nome;
+  document.getElementById("exModalSub").textContent = [modulo, aula].filter(Boolean).join(" - ");
+  document.getElementById("exModalDesc").textContent = desc;
+
+  updateModalImage();
+  showExerciseModal();
+}
+
+function updateModalImage() {
+  const imgEl = document.getElementById("exModalImg");
+  imgEl.src = modalState.images[modalState.currentIdx];
+}
+
+function showExerciseModal() {
+  const modal = document.getElementById("exerciseModal");
+  modal.classList.add("is-open");
+  document.body.style.overflow = "hidden";
+}
+
+function closeExerciseModal() {
+  const modal = document.getElementById("exerciseModal");
+  modal.classList.remove("is-open");
+  document.body.style.overflow = "";
+}
+
+document.addEventListener("DOMContentLoaded", () => {
+  const modal = document.getElementById("exerciseModal");
+  const backdrop = modal.querySelector(".ex-modal-backdrop");
+  const btnClose = modal.querySelector(".ex-modal-close");
+  const btnPrev = modal.querySelector(".ex-nav-prev");
+  const btnNext = modal.querySelector(".ex-nav-next");
+  const btnDownload = document.getElementById("exBtnDownload");
+  const btnCopy = document.getElementById("exBtnCopy");
+
+  backdrop.addEventListener("click", closeExerciseModal);
+  btnClose.addEventListener("click", closeExerciseModal);
+
+  btnPrev.addEventListener("click", () => {
+    modalState.currentIdx = (modalState.currentIdx - 1 + modalState.images.length) % modalState.images.length;
+    updateModalImage();
+  });
+
+  btnNext.addEventListener("click", () => {
+    modalState.currentIdx = (modalState.currentIdx + 1) % modalState.images.length;
+    updateModalImage();
+  });
+
+  btnDownload.addEventListener("click", () => {
+    const url = modalState.images[modalState.currentIdx];
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = "";
+    a.click();
+  });
+
+  btnCopy.addEventListener("click", async () => {
+    try {
+      const url = modalState.images[modalState.currentIdx];
+      const res = await fetch(url);
+      const blob = await res.blob();
+      const item = new ClipboardItem({ [blob.type]: blob });
+      await navigator.clipboard.write([item]);
+      alert("Imagem copiada!");
+    } catch {
+      alert("Não foi possível copiar. Use o botão Baixar.");
+    }
+  });
+});
+
+  
 </script>
 
 <script>
@@ -752,6 +1042,35 @@ populateHoraSelect();
 <div id="global-loading" aria-live="polite" aria-busy="true" style="display:none">
   <div class="global-loading-bubble">Carregando…</div>
 </div>
+<!-- Modal de visualização de exercício -->
+<div id="exerciseModal" class="ex-modal" aria-hidden="true">
+  <div class="ex-modal-backdrop"></div>
+
+  <div class="ex-modal-dialog" role="dialog" aria-modal="true">
+    <button class="ex-modal-close" type="button" aria-label="Fechar">&times;</button>
+
+    <div class="ex-modal-header">
+      <div id="exModalTitle"></div>
+      <div id="exModalSub"></div>
+    </div>
+
+    <div class="ex-modal-body">
+      <button class="ex-nav ex-nav-prev" type="button">&#8249;</button>
+      <img id="exModalImg" src="" alt="Exercício">
+      <button class="ex-nav ex-nav-next" type="button">&#8250;</button>
+    </div>
+
+    <div class="ex-modal-footer">
+      <div id="exModalDesc"></div>
+      <div class="ex-modal-actions">
+        <button id="exBtnDownload" type="button">Baixar</button>
+        <button id="exBtnCopy" type="button">Copiar</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+  
 </body>
 </html>
 
