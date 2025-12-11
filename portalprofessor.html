@@ -964,15 +964,23 @@ function openExerciseModal(rowIndex, imgIndexFrom1) {
   showExerciseModal();
 }
 
+
+
+// NOVO – gera uma URL "direta" de imagem a partir do link do Drive
 function getDriveViewUrl(url) {
   try {
     if (!url) return "";
+
+    // Se já for uma URL "direta" do Google (googleusercontent), usa como está
+    if (url.includes("googleusercontent.com")) {
+      return url;
+    }
 
     // Só tratamos links do Drive
     if (url.includes("drive.google.com")) {
       const u = new URL(url);
 
-      // Formato: https://drive.google.com/file/d/ARQUIVO_ID/...
+      // Formato padrão: https://drive.google.com/file/d/ARQUIVO_ID/...
       const parts = u.pathname.split("/");
       const dIndex = parts.indexOf("d");
       let fileId = null;
@@ -981,14 +989,16 @@ function getDriveViewUrl(url) {
         fileId = parts[dIndex + 1];
       }
 
-      // Formato: https://drive.google.com/uc?export=view&id=ARQUIVO_ID
+      // Outro formato: https://drive.google.com/open?id=ARQUIVO_ID
       if (!fileId) {
         const idParam = u.searchParams.get("id");
         if (idParam) fileId = idParam;
       }
 
+      // Se achou o ID, monta uma URL direta de download/visualização
       if (fileId) {
-        return `https://drive.google.com/uc?export=view&id=${fileId}`;
+        // `export=download` costuma funcionar melhor como imagem também
+        return `https://drive.google.com/uc?export=download&id=${fileId}`;
       }
     }
 
@@ -998,6 +1008,10 @@ function getDriveViewUrl(url) {
     return url;
   }
 }
+
+
+
+  
 
 function updateModalImage() {
   const imgEl = document.getElementById("exModalImg");
@@ -1065,34 +1079,29 @@ btnDownload.addEventListener("click", () => {
 
 btnCopy.addEventListener("click", async () => {
   const rawUrl = modalState.images[modalState.currentIdx];
-  const url = getDriveViewUrl(rawUrl); // usa a mesma função da imagem
+  const url = getDriveViewUrl(rawUrl); // URL direta da imagem
 
-  // Tentativa moderna (navigator.clipboard)
-  if (navigator.clipboard && navigator.clipboard.writeText) {
-    try {
-      await navigator.clipboard.writeText(url);
-      alert("Link copiado para a área de transferência.");
-      return;
-    } catch (e) {
-      // se der erro, cai pro fallback abaixo
-    }
+  // Verifica se o navegador suporta copiar IMAGEM
+  if (!navigator.clipboard || !window.ClipboardItem) {
+    alert("Seu navegador não permite copiar a imagem automaticamente. Use o botão Baixar.");
+    return;
   }
-
-  // Fallback mais antigo (input escondido + execCommand)
-  const tmp = document.createElement("input");
-  tmp.value = url;
-  document.body.appendChild(tmp);
-  tmp.select();
 
   try {
-    document.execCommand("copy");
-    alert("Link copiado para a área de transferência.");
-  } catch (e) {
-    alert("Não foi possível copiar automaticamente. Use o botão Baixar ou copie o link manualmente.");
-  }
+    // Tenta baixar a imagem
+    const res = await fetch(url);
+    const blob = await res.blob();
 
-  tmp.remove();
+    const item = new ClipboardItem({ [blob.type]: blob });
+    await navigator.clipboard.write([item]);
+
+    alert("Imagem copiada! Agora é só colar com Ctrl+V no seu programa de desenho.");
+  } catch (e) {
+    console.error(e);
+    alert("Não foi possível copiar a imagem automaticamente. Use o botão Baixar.");
+  }
 });
+
 
 
 });
@@ -1145,6 +1154,7 @@ btnCopy.addEventListener("click", async () => {
   
 </body>
 </html>
+
 
 
 
