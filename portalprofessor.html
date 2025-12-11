@@ -1015,8 +1015,32 @@ function updateModalImage() {
   const imgEl = document.getElementById("exModalImg");
   const rawUrl = modalState.images[modalState.currentIdx];
 
-  imgEl.src = getDriveImageUrl(rawUrl);
+  if (!imgEl || !rawUrl) {
+    console.warn("Sem imagem para exibir:", { imgEl, rawUrl });
+    return;
+  }
+
+  // monta URL tratada para Drive (quando for o caso)
+  const finalUrl = getDriveImageUrl(rawUrl);
+
+  console.log("🔎 ExModal URL:", {
+    rawUrl,
+    finalUrl
+  });
+
+  // se der erro para carregar a URL tratada, tenta a original
+  imgEl.onerror = function () {
+    console.warn("Erro carregando imagem com URL tratada, tentando URL original…", finalUrl);
+
+    if (finalUrl !== rawUrl) {
+      imgEl.onerror = null;           // evita loop infinito
+      imgEl.src = rawUrl;             // tenta a URL original
+    }
+  };
+
+  imgEl.src = finalUrl;
 }
+
 
 
 
@@ -1164,6 +1188,7 @@ btnCopy.addEventListener("click", async () => {
   
 </body>
 </html>
+
 
 
 
