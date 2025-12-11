@@ -966,8 +966,20 @@ function openExerciseModal(rowIndex, imgIndexFrom1) {
 
 function updateModalImage() {
   const imgEl = document.getElementById("exModalImg");
-  imgEl.src = modalState.images[modalState.currentIdx];
+  const url = modalState.images[modalState.currentIdx];
+
+  // tenta extrair o ID do arquivo do Google Drive
+  const match = url && url.match(/\/d\/([^\/]+)\//);
+  if (match) {
+    const fileId = match[1];
+    // URL própria para exibir a imagem (view)
+    imgEl.src = `https://drive.google.com/uc?export=view&id=${fileId}`;
+  } else {
+    // se não for link do Drive, usa como está
+    imgEl.src = url;
+  }
 }
+
 
 function showExerciseModal() {
   const modal = document.getElementById("exerciseModal");
@@ -1003,26 +1015,51 @@ document.addEventListener("DOMContentLoaded", () => {
     updateModalImage();
   });
 
-  btnDownload.addEventListener("click", () => {
-    const url = modalState.images[modalState.currentIdx];
-    const a = document.createElement("a");
-    a.href = url;
-    a.download = "";
-    a.click();
-  });
+btnDownload.addEventListener("click", () => {
+  const url = modalState.images[modalState.currentIdx];
 
-  btnCopy.addEventListener("click", async () => {
-    try {
-      const url = modalState.images[modalState.currentIdx];
-      const res = await fetch(url);
-      const blob = await res.blob();
-      const item = new ClipboardItem({ [blob.type]: blob });
-      await navigator.clipboard.write([item]);
-      alert("Imagem copiada!");
-    } catch {
-      alert("Não foi possível copiar. Use o botão Baixar.");
+  // tenta extrair o ID do arquivo do Drive
+  const match = url && url.match(/\/d\/([^\/]+)\//);
+  let finalUrl = url;
+
+  if (match) {
+    const fileId = match[1];
+    // URL própria para download direto
+    finalUrl = `https://drive.google.com/uc?export=download&id=${fileId}`;
+  }
+
+  const a = document.createElement("a");
+  a.href = finalUrl;
+  a.download = "";
+  document.body.appendChild(a);
+  a.click();
+  a.remove();
+});
+
+
+btnCopy.addEventListener("click", async () => {
+  try {
+    const url = modalState.images[modalState.currentIdx];
+
+    const match = url && url.match(/\/d\/([^\/]+)\//);
+    let finalUrl = url;
+
+    if (match) {
+      const fileId = match[1];
+      // usa a URL de view para copiar a imagem em si
+      finalUrl = `https://drive.google.com/uc?export=view&id=${fileId}`;
     }
-  });
+
+    const res = await fetch(finalUrl);
+    const blob = await res.blob();
+    const item = new ClipboardItem({ [blob.type]: blob });
+    await navigator.clipboard.write([item]);
+    alert("Imagem copiada!");
+  } catch {
+    alert("Não foi possível copiar. Use o botão Baixar.");
+  }
+});
+
 });
 
   
@@ -1073,6 +1110,7 @@ document.addEventListener("DOMContentLoaded", () => {
   
 </body>
 </html>
+
 
 
 
