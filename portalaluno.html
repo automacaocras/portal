@@ -833,6 +833,53 @@ function addFileInput(){
   updateUIForTokens();
 }
 function updateAddBtnVisibility(){ updateUIForTokens(); }
+/* --------- Loading message rotator (envio) --------- */
+let __loadingMsgTimers = [];
+let __loadingMsgRunning = false;
+
+function clearLoadingMessageRotation(){
+  __loadingMsgTimers.forEach(t => clearTimeout(t));
+  __loadingMsgTimers = [];
+  __loadingMsgRunning = false;
+}
+
+/**
+ * Inicia mensagens progressivas no overlay global.
+ * - Só muda o texto se o overlay ainda estiver visível.
+ * - Se o envio terminar, chame clearLoadingMessageRotation().
+ */
+function startLoadingMessageRotation(){
+  clearLoadingMessageRotation();
+  __loadingMsgRunning = true;
+
+  const steps = [
+    { after: 0,     msg: "Enviando seu desenho…" },
+    { after: 3000,  msg: "Embalando a sua arte…" },
+    { after: 6000,  msg: "Enviando…" },
+    { after: 11000, msg: "Quase lá!" },
+    { after: 14000, msg: "O professor está sendo notificado…" },
+    { after: 17000, msg: "Só mais um pouco…" },
+    { after: 20000, msg: "É… está demorando mais do que o normal." },
+    { after: 30000, msg: "A sua internet está boa?" },
+    // Opcional: mensagem “final” após muito tempo (não é erro; é só aviso)
+    { after: 45000, msg: "Está demorando mais do que o normal..." },
+  ];
+
+  const isOverlayVisible = () => {
+    const box = document.getElementById("global-loading");
+    return box && box.style.display !== "none";
+  };
+
+  steps.forEach(step => {
+    const t = setTimeout(() => {
+      if (!__loadingMsgRunning) return;
+      if (!isOverlayVisible()) return;
+      // reusa seu setLoading para atualizar o texto, sem mexer no estado
+      setLoading(true, step.msg);
+    }, step.after);
+    __loadingMsgTimers.push(t);
+  });
+}
 
 /* --------- Envio --------- */
 async function enviarExercicio(){
@@ -864,7 +911,9 @@ async function enviarExercicio(){
     return;
   }
 
-  setLoading(true, "Enviando seu desenho…");
+setLoading(true, "Enviando seu desenho…");
+startLoadingMessageRotation();
+
 
   try{
     const files=[];
@@ -930,7 +979,10 @@ async function enviarExercicio(){
       alert("Erro ao enviar exercício: " + (e.message || e));
     }
   } finally {
+        clearLoadingMessageRotation();
     setLoading(false);
+
+
   }
 }
 
@@ -986,6 +1038,7 @@ document.addEventListener("DOMContentLoaded", async () => {
   </div>
 </body>
 </html>
+
 
 
 
