@@ -1196,18 +1196,25 @@
       updateModalImage();
     });
 
-    btnOpen.addEventListener("click", () => {
-      const raw = modalState.images[modalState.currentIdx];
-      if (!raw) {
-        alert("Nenhum link disponível.");
-        return;
-      }
+ btnOpen.addEventListener("click", () => {
+  // garante que há imagens para abrir
+  if (!modalState.images || !modalState.images.length) {
+    alert("Nenhum link disponível.");
+    return;
+  }
 
-      const candidates = buildDriveCandidates(raw);
-      const direct = candidates[0] || raw;
+  // para cada imagem enviada pelo aluno na MESMA LINHA,
+  // gera o melhor link (view/thumbnail/original) e abre em nova aba
+  modalState.images.forEach(raw => {
+    if (!raw) return;
 
-      window.open(direct, "_blank", "noopener");
-    });
+    const candidates = buildDriveCandidates(raw);
+    const direct = candidates[0] || raw;
+
+    window.open(direct, "_blank", "noopener");
+  });
+});
+
 
     btnDownload.addEventListener("click", () => {
       const url = modalState.images[modalState.currentIdx];
@@ -1275,3 +1282,4 @@
 
 </body>
 </html>
+
