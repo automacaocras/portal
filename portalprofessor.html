@@ -131,39 +131,34 @@
     width:max-content;
     min-width:760px;
   }
-  /* padding mais apertado pra tirar o “espaço vazio” */
 
-/* Grupo de linhas com a mesma pessoa */
-#exTable tbody tr.row-by-name {
-  background: #fff4d6;    /* laranja clarinho, ajuste à vontade */
-}
-  
+  /* Grupo de linhas com a mesma pessoa */
+  #exTable tbody tr.row-by-name {
+    background: #fff4d6;    /* laranja clarinho, ajuste à vontade */
+  }
 
-/* Cabeçalho da tabela – fundo laranja forte + texto branco */
-#exTable thead th {
-  background: #ff9f45;        /* laranja forte */
-  color: #fff;                /* texto branco */
-  border-bottom: 2px solid #e6852f; /* linha de divisão mais elegante */
-  padding: 10px 12px;         /* um pouco mais de "presença" visual */
-  text-align: left;
-  font-size: 14px;
-  font-weight: 700;
-  vertical-align: middle;
-  line-height: 1.3;
-}
+  /* Cabeçalho da tabela – fundo laranja forte + texto branco */
+  #exTable thead th {
+    background: #ff9f45;        /* laranja forte */
+    color: #fff;                /* texto branco */
+    border-bottom: 2px solid #e6852f; /* linha de divisão mais elegante */
+    padding: 10px 12px;         /* um pouco mais de "presença" visual */
+    text-align: left;
+    font-size: 14px;
+    font-weight: 700;
+    vertical-align: middle;
+    line-height: 1.3;
+  }
 
-
-/* Corpo da tabela – compacto */
-#exTable tbody td {
-  border-bottom: 1px solid #eee;
-  padding: 3px 6px;       /* mais baixinho */
-  text-align: left;
-  font-size: 14px;
-  vertical-align: middle;
-  line-height: 1.15;
-}
-
-
+  /* Corpo da tabela – compacto */
+  #exTable tbody td {
+    border-bottom: 1px solid #eee;
+    padding: 3px 6px;       /* mais baixinho */
+    text-align: left;
+    font-size: 14px;
+    vertical-align: middle;
+    line-height: 1.15;
+  }
 
   #exTable th { position:sticky; top:0; background:#fff; z-index:1; }
   #exTable a { word-break:break-all }
@@ -240,163 +235,164 @@
   }
 
   /* ===== Modal de visualização de exercício ===== */
-.ex-modal {
-  position: fixed;
-  inset: 0;
-  z-index: 10000;
-  display: none;
-  align-items: center;
-  justify-content: center;
-}
+  .ex-modal {
+    position: fixed;
+    inset: 0;
+    z-index: 10000;
+    display: none;
+    align-items: center;
+    justify-content: center;
+  }
 
-.ex-modal.is-open {
-  display: flex;
-}
+  .ex-modal.is-open {
+    display: flex;
+  }
 
-.ex-modal-backdrop {
-  position: absolute;
-  inset: 0;
-  background: rgba(0,0,0,0.65);
-}
+  .ex-modal-backdrop {
+    position: absolute;
+    inset: 0;
+    background: rgba(0,0,0,0.65);
+  }
 
-.ex-modal-dialog {
-  position: relative;
-  max-width: min(900px, 92vw);
-  max-height: 92vh;
-  background: #fff;
-  border-radius: 18px;
-  box-shadow: 0 14px 36px rgba(0,0,0,0.35);
-  padding: 18px 22px 16px;
-  display: flex;
-  flex-direction: column;
-  overflow: auto;
-  z-index: 1;
-}
+  .ex-modal-dialog {
+    position: relative;
+    max-width: min(900px, 92vw);
+    max-height: 92vh;
+    background: #fff;
+    border-radius: 18px;
+    box-shadow: 0 14px 36px rgba(0,0,0,0.35);
+    padding: 18px 22px 16px;
+    display: flex;
+    flex-direction: column;
+    overflow: auto;
+    z-index: 1;
+  }
 
-.ex-modal-close {
-  position: absolute;
-  top: 10px;
-  right: 14px;
-  border: none;
-  background: transparent;
-  font-size: 24px;
-  cursor: pointer;
-}
+  .ex-modal-close {
+    position: absolute;
+    top: 10px;
+    right: 14px;
+    border: none;
+    background: transparent;
+    font-size: 24px;
+    cursor: pointer;
+  }
 
-.ex-modal-header { margin-bottom: 12px; }
-#exModalTitle { font-size: 18px; font-weight: 700; }
-#exModalSub { font-size: 14px; color:#555; }
+  .ex-modal-header { margin-bottom: 12px; }
+  #exModalTitle { font-size: 18px; font-weight: 700; }
+  #exModalEmail {
+    font-size: 14px;
+    color:#333;
+    word-break: break-all;
+  }
+  #exModalSub { font-size: 14px; color:#555; }
 
-.ex-modal-body {
-  position: relative;
-  flex: 1;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  overflow: hidden;
-}
+  .ex-modal-body {
+    position: relative;
+    flex: 1;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    overflow: hidden;
+  }
 
-#exModalImg {
-  max-width: 100%;
-  max-height: 100%;
-  object-fit: contain;
-}
+  #exModalImg {
+    max-width: 100%;
+    max-height: 100%;
+    object-fit: contain;
+  }
 
   #exModalFrame {
-  width: 100%;
-  height: 100%;
-  border: none;
-}
-  
-.ex-nav {
-  position: absolute;
-  top: 50%;
-  transform: translateY(-50%);
-  border: none;
-  background: rgba(0,0,0,0.35);
-  color: #fff;
-  width: 38px;
-  height: 48px;
-  border-radius: 24px;
-  cursor: pointer;
-  font-size: 26px;
-}
-
-.ex-nav-prev { left: 8px; }
-.ex-nav-next { right: 8px; }
-
-/* footer do modal */
-.ex-modal-footer {
-  margin-top: 10px;
-  display: flex;
-  flex-direction: column;
-  gap: 8px;
-}
-
-#exModalDesc { font-size: 14px; line-height: 1.4; }
-
-.ex-modal-actions {
-  display: flex;
-  width: 100%;
-  gap: 0;                /* tira o espaço branco entre eles */
-  flex-wrap: nowrap;     /* mantém tudo em uma linha só */
-}
-
-.ex-modal-actions button {
-  border: none;
-  padding: 14px 0;       /* mais “botãozão” horizontal */
-  font-weight: 600;
-  cursor: pointer;
-  flex: 1 1 0;           /* cada um ocupa metade da largura */
-  max-width: none;       /* sem limite de largura */
-  border-radius: 0;      /* sem arredondar individualmente */
-}
-
-/* Se quiser as pontas externas levemente arredondadas, mantém o bloco acima e adiciona: */
-.ex-modal-actions button:first-child {
-  border-radius: 999px 0 0 999px;
-}
-
-.ex-modal-actions button:last-child {
-  border-radius: 0 999px 999px 0;
-}
-
-
-
-#exBtnOpen {
-  background: #f4c200;
-  color: #111;
-}
-
-#exBtnDownload {
-  background:#111;
-  color:#fff;
-}
-
-
-/* Botão "Envio 1/2/3" */
-.ex-link-btn {
-  background:none;
-  border:none;
-  padding:0;
-  color:#0066cc;
-  text-decoration:underline;
-  cursor:pointer;
-  font:inherit;
-}
-
-/* MOBILE */
-@media (max-width: 600px) {
-  .ex-modal-dialog {
     width: 100%;
-    max-width: 100%;
-    padding: 14px 12px;
-    border-radius: 12px;
+    height: 100%;
+    border: none;
   }
-  .ex-modal-body {
-    max-height: 60vh;
+
+  .ex-nav {
+    position: absolute;
+    top: 50%;
+    transform: translateY(-50%);
+    border: none;
+    background: rgba(0,0,0,0.35);
+    color: #fff;
+    width: 38px;
+    height: 48px;
+    border-radius: 24px;
+    cursor: pointer;
+    font-size: 26px;
   }
-}
+
+  .ex-nav-prev { left: 8px; }
+  .ex-nav-next { right: 8px; }
+
+  /* footer do modal */
+  .ex-modal-footer {
+    margin-top: 10px;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+  }
+
+  #exModalDesc { font-size: 14px; line-height: 1.4; }
+
+  .ex-modal-actions {
+    display: flex;
+    width: 100%;
+    gap: 0;                /* tira o espaço branco entre eles */
+    flex-wrap: nowrap;     /* mantém tudo em uma linha só */
+  }
+
+  .ex-modal-actions button {
+    border: none;
+    padding: 14px 0;       /* mais “botãozão” horizontal */
+    font-weight: 600;
+    cursor: pointer;
+    flex: 1 1 0;           /* cada um ocupa metade da largura */
+    max-width: none;       /* sem limite de largura */
+    border-radius: 0;      /* sem arredondar individualmente */
+  }
+
+  .ex-modal-actions button:first-child {
+    border-radius: 999px 0 0 999px;
+  }
+
+  .ex-modal-actions button:last-child {
+    border-radius: 0 999px 999px 0;
+  }
+
+  #exBtnOpen {
+    background: #f4c200;
+    color: #111;
+  }
+
+  #exBtnDownload {
+    background:#111;
+    color:#fff;
+  }
+
+  /* Botão "Envio 1/2/3" */
+  .ex-link-btn {
+    background:none;
+    border:none;
+    padding:0;
+    color:#0066cc;
+    text-decoration:underline;
+    cursor:pointer;
+    font:inherit;
+  }
+
+  /* MOBILE */
+  @media (max-width: 600px) {
+    .ex-modal-dialog {
+      width: 100%;
+      max-width: 100%;
+      padding: 14px 12px;
+      border-radius: 12px;
+    }
+    .ex-modal-body {
+      max-height: 60vh;
+    }
+  }
 </style>
 </head>
 <body>
@@ -750,155 +746,160 @@
     return /descr/i.test(String(h || ""));
   }
 
- async function fetchExercisesPreview() {
-  try {
-    setLoading(true, "Carregando exercícios…");
+  async function fetchExercisesPreview() {
+    try {
+      setLoading(true, "Carregando exercícios…");
 
-    const params = new URLSearchParams({
-      action: "listExercisesPreview",
-      curso:  sessao.curso,
-      email:  sessao.email,
-      limit:  PAGE_SIZE,
-      offset: 0
-    });
-
-    const r = await fetch(`${API_URL}?${params.toString()}`, { cache: 'no-store' });
-    if (!r.ok) throw new Error(`HTTP ${r.status}`);
-    const d = await r.json();
-    if (!d.ok) throw new Error(d.message || "Falha ao listar exercícios.");
-
-    // ===== Cabeçalho da tabela =====
-    const thead = document.querySelector("#exTable thead");
-    thead.innerHTML = "";
-    const trh = document.createElement("tr");
-    (d.headers || []).forEach(h => {
-      const th = document.createElement("th");
-      th.textContent = h;
-      trh.appendChild(th);
-    });
-    thead.appendChild(trh);
-
-    // Cache de headers para o modal
-    if (!bootstrap) bootstrap = {};
-    bootstrap.headersCache = d.headers || [];
-
-    setDescricaoWidth(bootstrap.headersCache);
-
-    // ===== Corpo da tabela =====
-    const tbody = document.querySelector("#exTable tbody");
-    tbody.innerHTML = "";
-
-    // guarda todas as linhas originais
-    exercisesData = d.rows || [];
-
-    // ==================================================
-    // AGRUPAR POR PRIMEIRA APARIÇÃO (SEM ORDENAR POR NOME)
-    // ==================================================
-    const groups = new Map();
-
-    // Passo 1 – registrar listas de linhas na ordem em que aparecem
-    exercisesData.forEach(row => {
-      const name = String(row["Nome"] || "").trim();
-      if (!groups.has(name)) {
-        groups.set(name, []);
-      }
-      groups.get(name).push(row);
-    });
-
-    // Passo 2 – reconstruir array respeitando:
-    // - ordem de primeira aparição do aluno
-    // - ordem cronológica interna de cada aluno
-    const orderedRows = [];
-    groups.forEach(list => {
-      list.forEach(item => orderedRows.push(item));
-    });
-
-    d.rows = orderedRows;
-    exercisesData = orderedRows;
-
-    // ===== AGRUPAMENTO VISUAL (faixas laranjas por nome) =====
-    let lastName = null;
-    let useAltColor = false;
-
-    (d.rows || []).forEach((row, rowIndex) => {
-      const tr = document.createElement("tr");
-
-      // Nome atual da linha
-      const currentName = String(row["Nome"] || "").trim();
-
-      // Quando o nome muda, alterna a “cor de grupo”
-      if (currentName !== lastName) {
-        useAltColor = !useAltColor;
-        lastName = currentName;
-      }
-
-      // Aplica a classe de fundo no grupo inteiro
-      if (useAltColor) {
-        tr.classList.add("row-by-name");
-      }
-
-      (d.headers || []).forEach(h => {
-        const td = document.createElement("td");
-        const rawValue = row[h];
-        const s = String(rawValue || "").trim();
-
-        if (!s) {
-          td.textContent = "";
-          tr.appendChild(td);
-          return;
-        }
-
-        if (isLinkCol(h) && /^https?:\/\//i.test(s)) {
-          // coluna de link de imagem -> botão "Envio X"
-          const imgIdx = parseInt((h.match(/\d+/) || ["1"])[0], 10);
-          const btn = document.createElement("button");
-          btn.type = "button";
-          btn.className = "ex-link-btn";
-          btn.textContent = linkLabelFromHeader(h);
-          btn.dataset.rowIndex = rowIndex;
-          btn.dataset.imgIndex = imgIdx;
-          td.appendChild(btn);
-        } else {
-          // outras colunas normais
-          const html = renderCellHTML(h, rawValue);
-          td.innerHTML = needsClip(h) ? wrapClipHTML(html) : html;
-        }
-
-        tr.appendChild(td);
+      const params = new URLSearchParams({
+        action: "listExercisesPreview",
+        curso:  sessao.curso,
+        email:  sessao.email,
+        limit:  PAGE_SIZE,
+        offset: 0
       });
 
-      tbody.appendChild(tr);
-    });
+      const r = await fetch(`${API_URL}?${params.toString()}`, { cache: 'no-store' });
+      if (!r.ok) throw new Error(`HTTP ${r.status}`);
+      const d = await r.json();
+      if (!d.ok) throw new Error(d.message || "Falha ao listar exercícios.");
 
-    // textos longos com tooltip
-    attachOverflowPreview();
-    // conecta cliques dos botões "Envio X" ao modal
-    attachModalTriggers();
+      // ===== Cabeçalho da tabela (com reordenação e ocultando Email/Aula) =====
+      const allHeaders = d.headers || [];
 
-    // ===== Total de exercícios =====
-    const total = d.totalRows || 0;
-    const label = total === 1 ? "exercício" : "exercícios";
-    document.getElementById("exTotalText").textContent = `Total ${total} ${label}`;
+      const nameHeader   = allHeaders.find(h => /^nome/i.test(h));
+      const moduleHeader = allHeaders.find(h => /^m[oó]dulo/i.test(h));
+      const descHeader   = allHeaders.find(h => /^descr/i.test(h));
+      const dateHeader   = allHeaders.find(h => /^data/i.test(h));
 
-    // ===== Nenhum envio =====
-    if ((d.rows || []).length === 0) {
-      const tr = document.createElement("tr");
-      const td = document.createElement("td");
-      td.colSpan = (d.headers || []).length || 1;
-      td.style.textAlign = "center";
-      td.style.color = "#666";
-      td.textContent = "Nenhum envio encontrado.";
-      tr.appendChild(td);
-      tbody.appendChild(tr);
+      const linkHeaders = allHeaders
+        .filter(h => isLinkCol(h))
+        .sort((a, b) => {
+          const na = parseInt((String(a).match(/\d+/) || ["0"])[0], 10);
+          const nb = parseInt((String(b).match(/\d+/) || ["0"])[0], 10);
+          return na - nb;
+        });
+
+      const displayHeaders = [
+        nameHeader,
+        moduleHeader,
+        ...linkHeaders,
+        descHeader,
+        dateHeader
+      ].filter(Boolean);
+
+      const thead = document.querySelector("#exTable thead");
+      thead.innerHTML = "";
+      const trh = document.createElement("tr");
+      displayHeaders.forEach(h => {
+        const th = document.createElement("th");
+        th.textContent = h;
+        trh.appendChild(th);
+      });
+      thead.appendChild(trh);
+
+      if (!bootstrap) bootstrap = {};
+      bootstrap.headersCache   = allHeaders;      // todas as colunas originais
+      bootstrap.displayHeaders = displayHeaders;  // apenas as visíveis
+
+      setDescricaoWidth(displayHeaders);
+
+      // ===== Corpo da tabela =====
+      const tbody = document.querySelector("#exTable tbody");
+      tbody.innerHTML = "";
+
+      // guarda todas as linhas originais
+      exercisesData = d.rows || [];
+
+      // AGRUPAR POR PRIMEIRA APARIÇÃO (sem ordenar alfabeticamente)
+      const groups = new Map();
+      exercisesData.forEach(row => {
+        const name = String(row["Nome"] || "").trim();
+        if (!groups.has(name)) {
+          groups.set(name, []);
+        }
+        groups.get(name).push(row);
+      });
+
+      const orderedRows = [];
+      groups.forEach(list => {
+        list.forEach(item => orderedRows.push(item));
+      });
+
+      d.rows = orderedRows;
+      exercisesData = orderedRows;
+
+      // ===== AGRUPAMENTO VISUAL (faixas laranjas por nome) =====
+      let lastName = null;
+      let useAltColor = false;
+
+      (d.rows || []).forEach((row, rowIndex) => {
+        const tr = document.createElement("tr");
+
+        const currentName = String(row["Nome"] || "").trim();
+        if (currentName !== lastName) {
+          useAltColor = !useAltColor;
+          lastName = currentName;
+        }
+
+        if (useAltColor) {
+          tr.classList.add("row-by-name");
+        }
+
+        (displayHeaders || allHeaders || []).forEach(h => {
+          const td = document.createElement("td");
+          const rawValue = row[h];
+          const s = String(rawValue || "").trim();
+
+          if (!s) {
+            td.textContent = "";
+            tr.appendChild(td);
+            return;
+          }
+
+          if (isLinkCol(h) && /^https?:\/\//i.test(s)) {
+            const imgIdx = parseInt((h.match(/\d+/) || ["1"])[0], 10);
+            const btn = document.createElement("button");
+            btn.type = "button";
+            btn.className = "ex-link-btn";
+            btn.textContent = linkLabelFromHeader(h);
+            btn.dataset.rowIndex = rowIndex;
+            btn.dataset.imgIndex = imgIdx;
+            td.appendChild(btn);
+          } else {
+            const html = renderCellHTML(h, rawValue);
+            td.innerHTML = needsClip(h) ? wrapClipHTML(html) : html;
+          }
+
+          tr.appendChild(td);
+        });
+
+        tbody.appendChild(tr);
+      });
+
+      attachOverflowPreview();
+      attachModalTriggers();
+
+      const total = d.totalRows || 0;
+      const label = total === 1 ? "exercício" : "exercícios";
+      document.getElementById("exTotalText").textContent = `Total ${total} ${label}`;
+
+      if ((d.rows || []).length === 0) {
+        const tr = document.createElement("tr");
+        const td = document.createElement("td");
+        td.colSpan = (displayHeaders || allHeaders || []).length || 1;
+        td.style.textAlign = "center";
+        td.style.color = "#666";
+        td.textContent = "Nenhum envio encontrado.";
+        tr.appendChild(td);
+        tbody.appendChild(tr);
+      }
+
+    } catch (e) {
+      alert("Erro: " + e.message);
+    } finally {
+      setLoading(false);
     }
-
-  } catch (e) {
-    alert("Erro: " + e.message);
-  } finally {
-    setLoading(false);
   }
-}
-
 
   document.addEventListener('DOMContentLoaded', boot);
 
@@ -943,7 +944,7 @@
 
     fetchExercisesPreview();
 
-    window.addEventListener("resize", () => setDescricaoWidth( (bootstrap?.headersCache || []) ));
+    window.addEventListener("resize", () => setDescricaoWidth( (bootstrap?.displayHeaders || []) ));
 
     ['#fLink','#fHora','#fDia'].forEach(clearInvalidOnInput);
   }
@@ -1044,16 +1045,22 @@
     modalState.images = buildImagesArrayForRow(row);
     modalState.currentIdx = (imgIndexFrom1 - 1) || 0;
 
-    const nome   = row["Nome"] || "";
-    const modulo = row["Módulo"] || row["Modulo"] || "";
-    const aula   = row["Aula"] || "";
+    const nome   = row["Nome"]      || "";
+    const modulo = row["Módulo"]    || row["Modulo"] || "";
+    const aula   = row["Aula"]      || "";
     const desc   = row["Descrição"] || row["Descricao"] || "";
+    const email  = row["Email"]     || row["E-mail"]   || row["email"] || "";
 
-    document.getElementById("exModalTitle").textContent = nome;
-    document.getElementById("exModalSub").textContent = [modulo, aula].filter(Boolean).join(" - ");
-    document.getElementById("exModalDesc").textContent = desc;
+    const titleEl = document.getElementById("exModalTitle");
+    const emailEl = document.getElementById("exModalEmail");
+    const subEl   = document.getElementById("exModalSub");
+    const descEl  = document.getElementById("exModalDesc");
 
-    // mostra as setas só se tiver mais de uma imagem
+    if (titleEl) titleEl.textContent = nome || "(sem nome)";
+    if (emailEl) emailEl.textContent = email || "";
+    if (subEl)   subEl.textContent   = [modulo, aula].filter(Boolean).join(" | ");
+    if (descEl)  descEl.textContent  = desc || "";
+
     const hasMany = modalState.images.length > 1;
     const prevBtn = document.querySelector('.ex-nav-prev');
     const nextBtn = document.querySelector('.ex-nav-next');
@@ -1073,20 +1080,17 @@
     try {
       const u = new URL(url);
 
-      // se não for Drive, só devolve o próprio link
       if (!u.hostname.includes("drive.google.com")) {
         return [url];
       }
 
       let fileId = null;
 
-      // /file/d/ARQUIVO_ID/view
       const match1 = u.pathname.match(/\/file\/d\/([^/]+)/);
       if (match1 && match1[1]) {
         fileId = match1[1];
       }
 
-      // ?id=ARQUIVO_ID
       if (!fileId) {
         const idParam = u.searchParams.get("id");
         if (idParam) fileId = idParam;
@@ -1096,13 +1100,11 @@
         const viewUrl = `https://drive.google.com/uc?export=view&id=${fileId}`;
         const thumbUrl = `https://drive.google.com/thumbnail?id=${fileId}&sz=w1000`;
 
-        // ordem de tentativas: view inteira -> thumb -> original
         candidates = [viewUrl, thumbUrl, url];
       } else {
         candidates = [url];
       }
     } catch (e) {
-      // se der erro no new URL(), cai no original
       candidates = [url];
     }
 
@@ -1171,14 +1173,13 @@
   }
 
   document.addEventListener("DOMContentLoaded", () => {
-  const modal = document.getElementById("exerciseModal");
-const backdrop = modal.querySelector(".ex-modal-backdrop");
-const btnClose = modal.querySelector(".ex-modal-close");
-const btnPrev = modal.querySelector(".ex-nav-prev");
-const btnNext = modal.querySelector(".ex-nav-next");
-const btnOpen = document.getElementById("exBtnOpen");
-const btnDownload = document.getElementById("exBtnDownload");
-
+    const modal = document.getElementById("exerciseModal");
+    const backdrop = modal.querySelector(".ex-modal-backdrop");
+    const btnClose = modal.querySelector(".ex-modal-close");
+    const btnPrev = modal.querySelector(".ex-nav-prev");
+    const btnNext = modal.querySelector(".ex-nav-next");
+    const btnOpen = document.getElementById("exBtnOpen");
+    const btnDownload = document.getElementById("exBtnDownload");
 
     backdrop.addEventListener("click", closeExerciseModal);
     btnClose.addEventListener("click", closeExerciseModal);
@@ -1195,43 +1196,37 @@ const btnDownload = document.getElementById("exBtnDownload");
       updateModalImage();
     });
 
-btnOpen.addEventListener("click", () => {
-  const raw = modalState.images[modalState.currentIdx];
-  if (!raw) {
-    alert("Nenhum link disponível.");
-    return;
-  }
+    btnOpen.addEventListener("click", () => {
+      const raw = modalState.images[modalState.currentIdx];
+      if (!raw) {
+        alert("Nenhum link disponível.");
+        return;
+      }
 
-  // Usa seus próprios candidatos (view, thumbnail, original)
-  const candidates = buildDriveCandidates(raw);
+      const candidates = buildDriveCandidates(raw);
+      const direct = candidates[0] || raw;
 
-  // Tenta abrir o primeiro candidato direto (normalmente o uc?export=view)
-  const direct = candidates[0] || raw;
+      window.open(direct, "_blank", "noopener");
+    });
 
-  window.open(direct, "_blank", "noopener");
-});
+    btnDownload.addEventListener("click", () => {
+      const url = modalState.images[modalState.currentIdx];
 
+      const match = url && url.match(/\/d\/([^\/]+)\//);
+      let finalUrl = url;
 
+      if (match) {
+        const fileId = match[1];
+        finalUrl = `https://drive.google.com/uc?export=download&id=${fileId}`;
+      }
 
-    
-btnDownload.addEventListener("click", () => {
-  const url = modalState.images[modalState.currentIdx];
-
-  const match = url && url.match(/\/d\/([^\/]+)\//);
-  let finalUrl = url;
-
-  if (match) {
-    const fileId = match[1];
-    finalUrl = `https://drive.google.com/uc?export=download&id=${fileId}`;
-  }
-
-  const a = document.createElement("a");
-  a.href = finalUrl;
-  a.download = "";
-  document.body.appendChild(a);
-  a.click();
-  a.remove();
-});
+      const a = document.createElement("a");
+      a.href = finalUrl;
+      a.download = "";
+      document.body.appendChild(a);
+      a.click();
+      a.remove();
+    });
 
   });
 
@@ -1258,6 +1253,7 @@ btnDownload.addEventListener("click", () => {
 
     <div class="ex-modal-header">
       <div id="exModalTitle"></div>
+      <div id="exModalEmail"></div>
       <div id="exModalSub"></div>
     </div>
 
@@ -1270,22 +1266,12 @@ btnDownload.addEventListener("click", () => {
     <div class="ex-modal-footer">
       <div id="exModalDesc"></div>
       <div class="ex-modal-actions">
-  <button id="exBtnOpen" type="button">Abrir em nova aba</button>
-  <button id="exBtnDownload" type="button">Baixar</button>
-</div>
-
+        <button id="exBtnOpen" type="button">Abrir em nova aba</button>
+        <button id="exBtnDownload" type="button">Baixar</button>
+      </div>
     </div>
   </div>
 </div>
 
 </body>
 </html>
-
-
-
-
-
-
-
-
-
