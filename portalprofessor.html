@@ -1122,15 +1122,22 @@ const btnDownload = document.getElementById("exBtnDownload");
       updateModalImage();
     });
 
-    btnOpen.addEventListener("click", () => {
-  const url = modalState.images[modalState.currentIdx];
-  if (!url) {
+btnOpen.addEventListener("click", () => {
+  const raw = modalState.images[modalState.currentIdx];
+  if (!raw) {
     alert("Nenhum link disponível.");
     return;
   }
-  // abre exatamente o link salvo na planilha (o do Drive que já funciona)
-  window.open(url, "_blank", "noopener");
+
+  // Usa seus próprios candidatos (view, thumbnail, original)
+  const candidates = buildDriveCandidates(raw);
+
+  // Tenta abrir o primeiro candidato direto (normalmente o uc?export=view)
+  const direct = candidates[0] || raw;
+
+  window.open(direct, "_blank", "noopener");
 });
+
 
 
     
@@ -1200,4 +1207,5 @@ btnDownload.addEventListener("click", () => {
 
 </body>
 </html>
+
 
