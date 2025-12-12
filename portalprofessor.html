@@ -749,7 +749,7 @@
     return /descr/i.test(String(h || ""));
   }
 
-  async function fetchExercisesPreview() {
+ async function fetchExercisesPreview() {
   try {
     setLoading(true, "Carregando exercícios…");
 
@@ -766,7 +766,7 @@
     const d = await r.json();
     if (!d.ok) throw new Error(d.message || "Falha ao listar exercícios.");
 
-    // Cabeçalho da tabela
+    // ===== Cabeçalho da tabela =====
     const thead = document.querySelector("#exTable thead");
     thead.innerHTML = "";
     const trh = document.createElement("tr");
@@ -783,14 +783,39 @@
 
     setDescricaoWidth(bootstrap.headersCache);
 
-    // Corpo da tabela
+    // ===== Corpo da tabela =====
     const tbody = document.querySelector("#exTable tbody");
     tbody.innerHTML = "";
 
-    // guarda todas as linhas para o modal
+    // guarda todas as linhas originais
     exercisesData = d.rows || [];
 
-    // ===== AGRUPAMENTO POR NOME =====
+    // ==================================================
+    // AGRUPAR POR PRIMEIRA APARIÇÃO (SEM ORDENAR POR NOME)
+    // ==================================================
+    const groups = new Map();
+
+    // Passo 1 – registrar listas de linhas na ordem em que aparecem
+    exercisesData.forEach(row => {
+      const name = String(row["Nome"] || "").trim();
+      if (!groups.has(name)) {
+        groups.set(name, []);
+      }
+      groups.get(name).push(row);
+    });
+
+    // Passo 2 – reconstruir array respeitando:
+    // - ordem de primeira aparição do aluno
+    // - ordem cronológica interna de cada aluno
+    const orderedRows = [];
+    groups.forEach(list => {
+      list.forEach(item => orderedRows.push(item));
+    });
+
+    d.rows = orderedRows;
+    exercisesData = orderedRows;
+
+    // ===== AGRUPAMENTO VISUAL (faixas laranjas por nome) =====
     let lastName = null;
     let useAltColor = false;
 
@@ -800,13 +825,13 @@
       // Nome atual da linha
       const currentName = String(row["Nome"] || "").trim();
 
-      // Quando o nome muda, alterna a cor
+      // Quando o nome muda, alterna a “cor de grupo”
       if (currentName !== lastName) {
         useAltColor = !useAltColor;
         lastName = currentName;
       }
 
-      // Aplica a classe no grupo “ligado”
+      // Aplica a classe de fundo no grupo inteiro
       if (useAltColor) {
         tr.classList.add("row-by-name");
       }
@@ -849,12 +874,12 @@
     // conecta cliques dos botões "Envio X" ao modal
     attachModalTriggers();
 
-    // Total de exercícios
+    // ===== Total de exercícios =====
     const total = d.totalRows || 0;
     const label = total === 1 ? "exercício" : "exercícios";
     document.getElementById("exTotalText").textContent = `Total ${total} ${label}`;
 
-    // Nenhum envio
+    // ===== Nenhum envio =====
     if ((d.rows || []).length === 0) {
       const tr = document.createElement("tr");
       const td = document.createElement("td");
@@ -1254,6 +1279,7 @@ btnDownload.addEventListener("click", () => {
 
 </body>
 </html>
+
 
 
 
