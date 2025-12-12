@@ -853,16 +853,15 @@ function startLoadingMessageRotation(){
   __loadingMsgRunning = true;
 
   const steps = [
-    { after: 0,     msg: "Enviando seu desenho…" },
-    { after: 3000,  msg: "Embalando a sua arte…" },
-    { after: 6000,  msg: "Enviando…" },
-    { after: 11000, msg: "Quase lá!" },
-    { after: 14000, msg: "O professor está sendo notificado…" },
-    { after: 17000, msg: "Só mais um pouco…" },
-    { after: 20000, msg: "É… está demorando mais do que o normal." },
-    { after: 30000, msg: "A sua internet está boa?" },
-    // Opcional: mensagem “final” após muito tempo (não é erro; é só aviso)
-    { after: 45000, msg: "Está demorando mais do que o normal..." },
+    { after: 0,      msg: "Carregando" },
+    { after: 9000,   msg: "Embalando a sua arte" },              // 3s -> 9s
+    { after: 18000,  msg: "Enviando…" },                          // 6s -> 18s
+    { after: 33000,  msg: "Quase lá" },                          // 11s -> 33s
+    { after: 42000,  msg: "O professor está sendo notificado!" }, // 14s -> 42s
+    { after: 51000,  msg: "Só mais um pouco…" },                  // 17s -> 51s
+    { after: 80000,  msg: "Está demorando mais do que o normal." }, // 20s -> 60s
+    { after: 100000,  msg: "A sua internet está boa?" },           // 30s -> 90s
+    { after: 155000, msg: "Se continuar, tente trocar de rede e reenviar." }, // 45s -> 135s
   ];
 
   const isOverlayVisible = () => {
@@ -1043,6 +1042,7 @@ document.addEventListener("DOMContentLoaded", async () => {
   </div>
 </body>
 </html>
+
 
 
 
