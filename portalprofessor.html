@@ -132,15 +132,16 @@
     min-width:760px;
   }
   /* padding mais apertado pra tirar o “espaço vazio” */
-  #exTable th,
-  #exTable td {
-    border-bottom:1px solid #eee;
-    padding:6px 8px;
-    text-align:left;
-    font-size:14px;
-    vertical-align:top;
-    line-height:1.2;
-  }
+ #exTable th,
+#exTable td {
+  border-bottom: 1px solid #eee;
+  padding: 6px 8px;           /* menos “respiro” vertical */
+  text-align: left;
+  font-size: 14px;
+  vertical-align: middle;     /* tudo alinhado pelo meio da linha */
+  line-height: 1.25;
+}
+
   #exTable th { position:sticky; top:0; background:#fff; z-index:1; }
   #exTable a { word-break:break-all }
 
@@ -314,21 +315,32 @@
 .ex-modal-actions {
   display: flex;
   justify-content: center;
-  width: 100%;
+  gap: 12px;
+  flex-wrap: wrap;
 }
 
-/* único botão, largão */
+.ex-modal-actions button {
+  border: none;
+  padding: 10px 18px;
+  border-radius: 999px;
+  font-weight: 600;
+  cursor: pointer;
+  flex: 1 1 160px;      /* ocupa o máximo possível */
+  max-width: 260px;     /* mas não estoura demais em telas grandes */
+}
+
+
+
+#exBtnOpen {
+  background: #f4c200;
+  color: #111;
+}
+
 #exBtnDownload {
   background:#111;
   color:#fff;
-  border:none;
-  padding:10px 18px;
-  border-radius:999px;
-  font-weight:600;
-  cursor:pointer;
-  width:100%;
-  max-width:360px;
 }
+
 
 /* Botão "Envio 1/2/3" */
 .ex-link-btn {
@@ -1086,12 +1098,14 @@
   }
 
   document.addEventListener("DOMContentLoaded", () => {
-    const modal = document.getElementById("exerciseModal");
-    const backdrop = modal.querySelector(".ex-modal-backdrop");
-    const btnClose = modal.querySelector(".ex-modal-close");
-    const btnPrev = modal.querySelector(".ex-nav-prev");
-    const btnNext = modal.querySelector(".ex-nav-next");
-    const btnDownload = document.getElementById("exBtnDownload");
+  const modal = document.getElementById("exerciseModal");
+const backdrop = modal.querySelector(".ex-modal-backdrop");
+const btnClose = modal.querySelector(".ex-modal-close");
+const btnPrev = modal.querySelector(".ex-nav-prev");
+const btnNext = modal.querySelector(".ex-nav-next");
+const btnOpen = document.getElementById("exBtnOpen");
+const btnDownload = document.getElementById("exBtnDownload");
+
 
     backdrop.addEventListener("click", closeExerciseModal);
     btnClose.addEventListener("click", closeExerciseModal);
@@ -1108,27 +1122,37 @@
       updateModalImage();
     });
 
-    btnDownload.addEventListener("click", () => {
-      const url = modalState.images[modalState.currentIdx];
-      if (!url) return;
+    btnOpen.addEventListener("click", () => {
+  const url = modalState.images[modalState.currentIdx];
+  if (!url) {
+    alert("Nenhum link disponível.");
+    return;
+  }
+  // abre exatamente o link salvo na planilha (o do Drive que já funciona)
+  window.open(url, "_blank", "noopener");
+});
 
-      // tenta extrair o ID do arquivo do Drive
-      const match = url && url.match(/\/d\/([^\/]+)\//);
-      let finalUrl = url;
 
-      if (match) {
-        const fileId = match[1];
-        // URL própria para download direto
-        finalUrl = `https://drive.google.com/uc?export=download&id=${fileId}`;
-      }
+    
+btnDownload.addEventListener("click", () => {
+  const url = modalState.images[modalState.currentIdx];
 
-      const a = document.createElement("a");
-      a.href = finalUrl;
-      a.download = "";
-      document.body.appendChild(a);
-      a.click();
-      a.remove();
-    });
+  const match = url && url.match(/\/d\/([^\/]+)\//);
+  let finalUrl = url;
+
+  if (match) {
+    const fileId = match[1];
+    finalUrl = `https://drive.google.com/uc?export=download&id=${fileId}`;
+  }
+
+  const a = document.createElement("a");
+  a.href = finalUrl;
+  a.download = "";
+  document.body.appendChild(a);
+  a.click();
+  a.remove();
+});
+
   });
 
   function setLoading(state, msg = "Carregando…") {
@@ -1166,11 +1190,14 @@
     <div class="ex-modal-footer">
       <div id="exModalDesc"></div>
       <div class="ex-modal-actions">
-        <button id="exBtnDownload" type="button">Baixar</button>
-      </div>
+  <button id="exBtnOpen" type="button">Abrir em nova aba</button>
+  <button id="exBtnDownload" type="button">Baixar</button>
+</div>
+
     </div>
   </div>
 </div>
 
 </body>
 </html>
+
