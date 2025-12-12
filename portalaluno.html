@@ -875,6 +875,11 @@ function startLoadingMessageRotation(){
       if (!__loadingMsgRunning) return;
       if (!isOverlayVisible()) return;
       // reusa seu setLoading para atualizar o texto, sem mexer no estado
+
+      const box = document.getElementById("global-loading");
+if (!box) return;
+
+      
       setLoading(true, step.msg);
     }, step.after);
     __loadingMsgTimers.push(t);
@@ -1038,6 +1043,7 @@ document.addEventListener("DOMContentLoaded", async () => {
   </div>
 </body>
 </html>
+
 
 
 
