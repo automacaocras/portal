@@ -1604,6 +1604,8 @@ if (msg){
   const canInteract = !!__evState.canInteract;
   const daysToUnlock = Number(__evState.daysToUnlock || 0);
 
+
+
 // título/subtítulo
 title.textContent = "Minha evolução";
 
@@ -1613,13 +1615,13 @@ if (!pending){
   subtitle.innerHTML = "";      // não mostra nada no topo
   hide(uploadWrap);
 
-  if (done) done.classList.remove("hidden"); // ✅ mostra embaixo
+  if (done) done.classList.remove("hidden"); // mostra embaixo
 
 } else if (canInteract){
   subtitle.innerHTML = "";      // liberado, sem aviso no topo
   show(uploadWrap);
 
-  if (done) done.classList.add("hidden");    // ✅ esconde embaixo
+  if (done) done.classList.add("hidden");    // esconde embaixo
 
   if (pending === "2"){
     show(authWrap);
@@ -1631,7 +1633,7 @@ if (!pending){
     evSetAuthError(false);
   }
 
-  evResetFiles();
+  evResetFiles();               // ✅ fica só aqui (não duplica embaixo)
 
 } else {
   // bloqueado
@@ -1639,20 +1641,13 @@ if (!pending){
     `<span class="ev-badge ev-orange">Aguardando</span> Faltam <strong>${daysToUnlock}</strong> dia(s) para você conseguir subir novas artes!`;
   hide(uploadWrap);
 
-  if (done) done.classList.add("hidden");    // ✅ esconde embaixo
+  if (done) done.classList.add("hidden");    // esconde embaixo
 }
 
+
+
+
   
-
-
-    // sempre resetar ao entrar em modo "canInteract"
-    evResetFiles();
-  } else {
-    // bloqueado (a etapa pendente ainda não liberou)
-    subtitle.innerHTML = `<span class="ev-badge ev-orange">Aguardando</span> Faltam <strong>${daysToUnlock}</strong> dia(s) para você conseguir subir novas artes!`;
-    hide(uploadWrap);
-  }
-
  // ---------- THUMBS (etapas) em BLOCOS ----------
 const imgs = (__evState && __evState.images) ? __evState.images : {};
 
@@ -1951,6 +1946,7 @@ if (chkAut){
   </div>
 </body>
 </html>
+
 
 
 
