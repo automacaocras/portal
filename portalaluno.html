@@ -267,6 +267,39 @@
   #evolucao .ev-files input[type="file"]{
     width:100%;
   }
+/* ===== Autorização (checkbox) — EVOLUÇÃO ===== */
+#evolucao #evAuthWrap{
+  margin-top:12px;
+  text-align:left;
+}
+
+#evolucao .ev-auth-label{
+  display:flex;
+  align-items:flex-start;
+  gap:12px;
+  font-weight:800;
+  line-height:1.25;
+  cursor:pointer;
+  user-select:none;
+}
+
+#evolucao .ev-auth-label input[type="checkbox"]{
+  width:22px;
+  height:22px;
+  margin:0;
+  margin-top:2px;
+  flex:0 0 22px;
+  accent-color:#111; /* moderno e simples */
+}
+
+#evolucao .ev-auth-text{
+  color:#111;
+}
+
+/* estado de erro (texto vermelho) */
+#evolucao .ev-auth-text.is-error{
+  color:#d93025;
+}
 
 </style>
 
@@ -355,10 +388,13 @@
   </div>
 
   <div id="evAuthWrap" class="hidden" style="text-align:left;margin-top:10px;">
-    <label style="display:flex;gap:10px;align-items:flex-start;font-weight:700;">
-      <input id="chkAutorizo" type="checkbox" style="margin-top:4px;">
-      <span>Eu permito o curso divulgar as imagens da minha evolução de forma a chamar novos alunos.</span>
-    </label>
+<label class="ev-auth-label">
+  <input id="chkAutorizo" type="checkbox">
+  <span id="evAuthText" class="ev-auth-text">
+    Eu permito o curso divulgar as imagens da minha evolução de forma a chamar novos alunos.
+  </span>
+</label>
+
   </div>
 
   <div class="flex-row" style="margin-top:10px;">
@@ -1277,6 +1313,20 @@ let __evState = null;
 let __evModalStage = "";
 let __evModalUrls = [];
 let __evLastSuccess = null; // { html: string, at: number }
+  
+function evSetAuthError(on){
+  const t = qs("#evAuthText");
+  if (!t) return;
+
+  t.classList.toggle("is-error", !!on);
+
+  if (on){
+    t.scrollIntoView({
+      behavior: "smooth",
+      block: "center"
+    });
+  }
+}
 
 function evOpenAllFromModalStage(){
   if (!__evModalUrls || !__evModalUrls.length){
@@ -1481,14 +1531,16 @@ if (msg){
   subtitle.innerHTML = ""; // ⬅️ tira o aviso do topo
   show(uploadWrap);
 
-    // checkbox só na etapa 2 meses
-    if (pending === "2"){
-      show(authWrap);
-    } else {
-      hide(authWrap);
-      const chk = qs("#chkAutorizo");
-      if (chk) chk.checked = false;
-    }
+if (pending === "2"){
+  show(authWrap);
+  evSetAuthError(false); // limpa erro ao entrar
+} else {
+  hide(authWrap);
+  const chk = qs("#chkAutorizo");
+  if (chk) chk.checked = false;
+  evSetAuthError(false);
+}
+
 
     // sempre resetar ao entrar em modo "canInteract"
     evResetFiles();
@@ -1623,12 +1675,15 @@ async function evEnviar(){
   if (!chosen.length) return alert("Envie pelo menos 1 imagem.");
   if (chosen.length > EV_MAX_FILES) return alert(`Máximo de ${EV_MAX_FILES} imagens.`);
 
-  if (pending === "2"){
-    const chk = qs("#chkAutorizo");
-    if (!chk || !chk.checked){
-      return alert("Você precisa marcar a autorização para enviar nesta etapa.");
-    }
+if (pending === "2"){
+  const chk = qs("#chkAutorizo");
+  if (!chk || !chk.checked){
+    evSetAuthError(true); // 🔴 fica vermelho
+    return;
   }
+  evSetAuthError(false);
+}
+
 
 setLoading(true, "Separando sua evolução...");
 startEvLoadingMessageRotation();
@@ -1656,13 +1711,17 @@ autorizacao: (pending === "2") ? !!qs("#chkAutorizo")?.checked : false,
     if (!r.ok) throw new Error(`HTTP ${r.status}`);
     const d = await r.json();
 
-    if (!d.ok){
-      if (d.message === "need_authorization") alert("Marque a autorização para enviar.");
-      else if (d.message === "stage_locked") alert("Essa etapa ainda não foi liberada.");
-      else if (d.message === "stage_not_pending") alert("Essa não é a etapa pendente atual.");
-      else alert("Erro: " + (d.message || "falha"));
-      return;
-    }
+if (!d.ok){
+  if (d.message === "need_authorization"){
+    evSetAuthError(true); // 🔴 texto da autorização fica vermelho (sem alert)
+    return;
+  }
+  if (d.message === "stage_locked") alert("Essa etapa ainda não foi liberada.");
+  else if (d.message === "stage_not_pending") alert("Essa não é a etapa pendente atual.");
+  else alert("Erro: " + (d.message || "falha"));
+  return;
+}
+
 
 // atualiza bootstrap.evolucao com a resposta
 if (d.evolucao) bootstrap.evolucao = d.evolucao;
@@ -1759,6 +1818,17 @@ document.addEventListener("DOMContentLoaded", async () => {
   updateAddBtnVisibility();
   updateLiveBadgeFromBootstrap();
   setInterval(updateLiveBadgeFromBootstrap, 15_000);
+
+const chkAut = qs("#chkAutorizo");
+if (chkAut){
+  chkAut.addEventListener("change", () => {
+    if (chkAut.checked){
+      evSetAuthError(false);
+    }
+  });
+}
+
+  
 });
 </script>
  
@@ -1778,6 +1848,7 @@ document.addEventListener("DOMContentLoaded", async () => {
   </div>
 </body>
 </html>
+
 
 
 
