@@ -321,6 +321,35 @@
   #evolucao .ev-files input[type="file"]{
     width:100%;
   }
+
+/* ===== Comentário do professor (EVOLUÇÃO) ===== */
+#evolucao .ev-prof-wrap{
+  margin-top:18px;            /* ✅ mais distância acima do bloco */
+}
+
+#evolucao .ev-prof-title{
+  margin:0 0 6px;             /* ✅ pouco espaço embaixo do título */
+  font-weight:800;
+}
+
+#evolucao .ev-prof-text{
+  margin:0;                   /* ✅ remove o “buraco” padrão do <p> */
+  font-size:14px;             /* ✅ menor */
+  line-height:1.35;           /* ✅ mais compacto */
+  color:#111;
+  white-space:pre-wrap;       /* mantém quebras de linha do .txt */
+  word-break:break-word;      /* evita estourar no celular */
+}
+
+#evolucao .ev-prof-date{
+  margin:6px 0 0;             /* ✅ data bem perto do texto */
+  font-size:12px;             /* ✅ menor */
+  font-weight:700;
+  color:#444;
+}
+
+
+  
 /* ===== Autorização (checkbox) — EVOLUÇÃO ===== */
 #evolucao #evAuthWrap{
   margin-top:18px;
@@ -1734,19 +1763,20 @@ thumbsWrap.innerHTML = visibleKeys.map(k => {
     `
     : `<p class="hint" style="margin:6px 0 0;">Sem imagens nesta etapa.</p>`;
   const c = comments[k]; // null ou { text, dateISO }
-  const commentHtml = (c && c.text)
-    ? `
-      <div class="ev-comment" style="margin-top:12px;">
-        <div style="font-weight:900;">Comentário do professor:</div>
-        <div style="margin-top:6px; white-space:pre-wrap; word-break:break-word;">
-          ${escapeHtml_(c.text)}
-        </div>
-        <div style="margin-top:10px; font-weight:800; opacity:.75;">
-          ${formatDateBR_(c.dateISO)}
-        </div>
+const commentHtml = (c && c.text)
+  ? `
+    <div class="ev-prof-wrap">
+      <div class="ev-prof-title">Comentário do professor:</div>
+      <div class="ev-prof-text">
+        ${escapeHtml_(c.text)}
       </div>
-    `
-    : "";
+      <div class="ev-prof-date">
+        ${formatDateBR_(c.dateISO)}
+      </div>
+    </div>
+  `
+  : "";
+
 
 return `
   <div class="ev-block" data-ev-stage="${k}">
@@ -1999,6 +2029,7 @@ if (chkAut){
   </div>
 </body>
 </html>
+
 
 
 
