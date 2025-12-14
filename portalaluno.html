@@ -1244,9 +1244,9 @@ function startEvLoadingMessageRotation(){
   __evLoadingMsgRunning = true;
 
   const steps = [
-    { after: 0,      msg: "Separando sua evolução..." },
-    { after: 6000,   msg: "Analisando seu progresso..." },
-    { after: 12000,  msg: "Enviando a sua arte..." },
+    { after: 0,      msg: "Analisando seu progresso..." },
+    { after: 4000,   msg: "Carregando a sua evolução" },
+    { after: 10000,  msg: "Enviando a sua arte..." },
     { after: 25000,  msg: "Quase lá..." },
     { after: 40000,  msg: "Só mais um pouco..." },
     { after: 80000,  msg: "Está demorando mais do que o normal." },
@@ -1778,6 +1778,7 @@ document.addEventListener("DOMContentLoaded", async () => {
   </div>
 </body>
 </html>
+
 
 
 
