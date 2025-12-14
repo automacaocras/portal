@@ -155,7 +155,51 @@
   gap:10px;
   justify-content:flex-start;
 }
-
+/* Bloco por etapa (card separado) */
+.ev-block{
+  max-width:900px;
+  margin:14px auto;
+  background:#fff;
+  border:1px solid #f2e3a6;
+  border-radius:18px;
+  padding:16px;
+  box-shadow:0 8px 24px rgba(0,0,0,.06);
+  text-align:left;
+}
+.ev-block .ev-stage-title{
+  margin:0 0 10px;
+  font-weight:900;
+  padding:10px 12px;
+  border-radius:10px;
+  background:#f7f2dc;
+  border:1px solid #f2e3a6;
+}
+.ev-block .ev-stage-sub{
+  margin:0 0 12px;
+  font-weight:800;
+  color:#222;
+}
+.ev-files{
+  display:flex;
+  flex-direction:column;
+  gap:10px;
+  margin-top:10px;
+}
+.ev-files input[type="file"]{
+  width:100%;
+}
+.ev-stage-banner{
+  display:flex;
+  gap:10px;
+  align-items:center;
+  margin:10px 0 0;
+  font-weight:800;
+  font-size:14px;
+}
+.ev-block.card{
+  margin:14px auto;
+  text-align:left;
+}
   </style>
 </head>
 <body>
@@ -228,28 +272,27 @@
 <div id="evUploadWrap" class="hidden" style="margin-top:14px;">
   <div id="evSuccessMsg" class="hidden"></div>
 
-  <div id="evFilesWrap">
+  <div id="evFilesWrap" class="ev-files">
+    <input type="file" class="evFileItem" accept="image/*">
+    <input type="file" class="evFileItem" accept="image/*">
+    <input type="file" class="evFileItem" accept="image/*">
+    <div class="thumb-hint">Formatos JPG/PNG. Até 3 imagens.</div>
+  </div>
 
-        <input type="file" class="evFileItem" accept="image/*">
-        <div class="thumb-hint">Formatos JPG/PNG. Até 3 imagens.</div>
-      </div>
+  <div id="evAuthWrap" class="hidden" style="text-align:left;margin-top:10px;">
+    <label style="display:flex;gap:10px;align-items:flex-start;font-weight:700;">
+      <input id="chkAutorizo" type="checkbox" style="margin-top:4px;">
+      <span>Eu permito o curso divulgar as imagens da minha evolução de forma a chamar novos alunos.</span>
+    </label>
+  </div>
 
-      <div id="evAuthWrap" class="hidden" style="text-align:left;margin-top:10px;">
-        <label style="display:flex;gap:10px;align-items:flex-start;font-weight:700;">
-          <input id="chkAutorizo" type="checkbox" style="margin-top:4px;">
-          <span>Eu permito o curso divulgar as imagens da minha evolução de forma a chamar novos alunos.</span>
-        </label>
-      </div>
+  <div class="flex-row" style="margin-top:10px;">
+    <button id="evReset" class="btn-sec" type="button" data-busy>Resetar imagens</button>
+  </div>
 
-      <div class="flex-row" style="margin-top:10px;">
-        <button id="evAddImg" class="btn-sec" type="button" data-busy style="background:#28a745;color:#fff;border:none;">
-          Adicionar imagem
-        </button>
-        <button id="evReset" class="btn-sec" type="button" data-busy>Resetar imagens</button>
-      </div>
+  <button id="evEnviar" class="btn-cta" type="button" data-busy style="margin-top:12px;">Enviar</button>
+</div>
 
-      <button id="evEnviar" class="btn-cta" type="button" data-busy style="margin-top:12px;">Enviar</button>
-    </div>
 
     <button id="evVoltar" class="btn-back" type="button" data-busy style="margin-top:12px;">Voltar</button>
   </div>
@@ -1219,9 +1262,12 @@ function evCloseModal(){
 function evResetFiles(){
   qs("#evFilesWrap").innerHTML =
     '<input type="file" class="evFileItem" accept="image/*">' +
+    '<input type="file" class="evFileItem" accept="image/*">' +
+    '<input type="file" class="evFileItem" accept="image/*">' +
     '<div class="thumb-hint">Formatos JPG/PNG. Até 3 imagens.</div>';
-  evUpdateAddBtn();
 }
+
+
 
 function evAddFileInput(){
   const inputs = Array.from(document.querySelectorAll("#evFilesWrap input[type='file']"));
@@ -1289,10 +1335,10 @@ if (msg){ msg.classList.add("hidden"); msg.innerHTML = ""; }
   if (!pending){
     subtitle.innerHTML = `<span class="ev-badge ev-orange">Concluído</span> Você já completou todas as etapas.`;
     hide(uploadWrap);
-  } else if (canInteract){
-    // liberado para envio da etapa pendente
-    subtitle.innerHTML = `<span class="ev-badge ev-green">Disponível</span> Envie até 3 imagens da etapa: <strong>${evStageLabel(pending)}</strong>.`;
-    show(uploadWrap);
+} else if (canInteract){
+  // liberado para envio da etapa pendente
+  subtitle.innerHTML = ""; // ⬅️ tira o aviso do topo
+  show(uploadWrap);
 
     // checkbox só na etapa 2 meses
     if (pending === "2"){
@@ -1311,7 +1357,7 @@ if (msg){ msg.classList.add("hidden"); msg.innerHTML = ""; }
     hide(uploadWrap);
   }
 
- // ---------- THUMBS (etapas) ----------
+ // ---------- THUMBS (etapas) em BLOCOS ----------
 const imgs = (__evState && __evState.images) ? __evState.images : {};
 
 const STAGES = [
@@ -1321,11 +1367,7 @@ const STAGES = [
   { key:"11",    title:"Depois de 11 meses" },
 ];
 
-// Regras:
-// - Se concluiu tudo (pending == null): mostra TODAS as etapas
-// - Se ainda tem pendência:
-//    - se canInteract (etapa atual liberada): mostra todas as etapas até a etapa pendente (incluindo ela)
-//    - se NÃO pode interagir (etapa pendente ainda NÃO liberou): mostra só as etapas ANTERIORES (liberadas)
+// visibilidade (igual ao seu)
 let visibleKeys = [];
 if (!pending){
   visibleKeys = STAGES.map(s => s.key);
@@ -1339,32 +1381,37 @@ if (!pending){
       : STAGES.slice(0, idx).map(s => s.key);
   }
 }
-
-// Se não tiver nenhuma etapa visível (caso extremo), cai no "antes"
 if (!visibleKeys.length) visibleKeys = ["antes"];
 
-// Render em ordem
 thumbsWrap.innerHTML = visibleKeys.map(k => {
   const meta = STAGES.find(s => s.key === k);
   const arr = Array.isArray(imgs[k]) ? imgs[k] : [];
 
-  // monta miniaturas (Drive thumbnail)
+  // ✅ aviso só no bloco da etapa pendente e liberada
+  const showBanner = (canInteract && pending === k);
+  const banner = showBanner
+    ? `<div class="ev-stage-banner">
+         <span class="ev-badge ev-green">Disponível</span>
+         <span>Envie até 3 imagens da etapa: <strong>${evStageLabel(k)}</strong>.</span>
+       </div>`
+    : "";
+
   const grid = arr.length
     ? `
       <div class="ev-stage-grid">
         ${arr.map(url => {
           const thumb = driveThumbUrl(url, 300);
           const full  = driveThumbUrl(url, 1600);
-return `<img class="ev-thumb" src="${thumb}" data-full="${full}" data-stage="${k}" alt="Imagem" title="Clique para ampliar">`;
-
+          return `<img class="ev-thumb" src="${thumb}" data-full="${full}" data-stage="${k}" alt="Imagem" title="Clique para ampliar">`;
         }).join("")}
       </div>
     `
     : `<p class="hint" style="margin:6px 0 0;">Sem imagens nesta etapa.</p>`;
 
   return `
-    <div class="ev-stage">
+    <div class="ev-block card">
       <div class="ev-stage-title">${meta ? meta.title : k}</div>
+      ${banner}
       ${grid}
     </div>
   `;
@@ -1378,6 +1425,7 @@ thumbsWrap.querySelectorAll(".ev-thumb").forEach(img => {
     evOpenModal(full, stage, urls);
   });
 });
+
 
 
 
@@ -1524,7 +1572,6 @@ document.addEventListener("DOMContentLoaded", async () => {
   if (btnEv) btnEv.onclick = abrirEvolucao;
 
   qs("#evVoltar").onclick = evBackToMenu;
-  qs("#evAddImg").onclick = evAddFileInput;
   qs("#evReset").onclick  = evResetFiles;
   qs("#evEnviar").onclick = evEnviar;
 
@@ -1561,6 +1608,7 @@ document.addEventListener("DOMContentLoaded", async () => {
   </div>
 </body>
 </html>
+
 
 
 
