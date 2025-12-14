@@ -357,6 +357,22 @@
 #evolucao .ev-auth-text.is-error{
   color:#d93025;
 }
+/* ===== Mensagem final – Evolução concluída ===== */
+#evolucao #evDoneMsg{
+  max-width:900px;
+  margin:20px auto 12px;
+}
+
+#evolucao .ev-done-box{
+  background:#e6f7e1;
+  border:1px solid rgba(40,167,69,.3);
+  color:#1e7e34;
+  padding:16px;
+  border-radius:14px;
+  text-align:center;
+  font-weight:700;
+  box-shadow:0 4px 12px rgba(0,0,0,.08);
+}
 
 </style>
 
@@ -461,6 +477,13 @@
   <button id="evEnviar" class="btn-cta" type="button" data-busy style="margin-top:12px;">Enviar</button>
 </div>
 
+<!-- ✅ MENSAGEM FINAL (SÓ QUANDO CONCLUÍDO) -->
+<div id="evDoneMsg" class="hidden">
+  <div class="ev-done-box">
+    <strong>Você teve uma evolução incrível, <span data-nome>{NOME}</span>! 🎉</strong><br>
+    Parabéns por concluir todas as etapas!
+  </div>
+</div>
 
     <button id="evVoltar" class="btn-back" type="button" data-busy style="margin-top:12px;">Voltar</button>
   </div>
@@ -1581,26 +1604,45 @@ if (msg){
   const canInteract = !!__evState.canInteract;
   const daysToUnlock = Number(__evState.daysToUnlock || 0);
 
-  // título/subtítulo
-  title.textContent = "Minha evolução";
+// título/subtítulo
+title.textContent = "Minha evolução";
 
-  if (!pending){
-    subtitle.innerHTML = `<span class="ev-badge ev-orange">Concluído</span> Você já completou todas as etapas.`;
-    hide(uploadWrap);
+const done = qs("#evDoneMsg");
+
+if (!pending){
+  subtitle.innerHTML = "";      // não mostra nada no topo
+  hide(uploadWrap);
+
+  if (done) done.classList.remove("hidden"); // ✅ mostra embaixo
+
 } else if (canInteract){
-  // liberado para envio da etapa pendente
-  subtitle.innerHTML = ""; // ⬅️ tira o aviso do topo
+  subtitle.innerHTML = "";      // liberado, sem aviso no topo
   show(uploadWrap);
 
-if (pending === "2"){
-  show(authWrap);
-  evSetAuthError(false); // limpa erro ao entrar
+  if (done) done.classList.add("hidden");    // ✅ esconde embaixo
+
+  if (pending === "2"){
+    show(authWrap);
+    evSetAuthError(false);
+  } else {
+    hide(authWrap);
+    const chk = qs("#chkAutorizo");
+    if (chk) chk.checked = false;
+    evSetAuthError(false);
+  }
+
+  evResetFiles();
+
 } else {
-  hide(authWrap);
-  const chk = qs("#chkAutorizo");
-  if (chk) chk.checked = false;
-  evSetAuthError(false);
+  // bloqueado
+  subtitle.innerHTML =
+    `<span class="ev-badge ev-orange">Aguardando</span> Faltam <strong>${daysToUnlock}</strong> dia(s) para você conseguir subir novas artes!`;
+  hide(uploadWrap);
+
+  if (done) done.classList.add("hidden");    // ✅ esconde embaixo
 }
+
+  
 
 
     // sempre resetar ao entrar em modo "canInteract"
@@ -1909,6 +1951,7 @@ if (chkAut){
   </div>
 </body>
 </html>
+
 
 
 
