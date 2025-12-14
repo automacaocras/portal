@@ -196,10 +196,43 @@
   font-weight:800;
   font-size:14px;
 }
-.ev-block.card{
+
+
+    /* Wrapper da Evolução sem “card branco por trás” */
+#evolucao .ev-root{
+  max-width:900px;
   margin:14px auto;
+  padding:0;
+  background:transparent;
+  border:none;
+  box-shadow:none;
+}
+
+/* garante que a lista de etapas ocupa toda a largura */
+#evolucao #evThumbsWrap{
+  width:100%;
+}
+
+.ev-thumbs{
+  width:100%;
+  align-items:stretch; /* mantém */
+}
+
+/* Card de cada etapa ocupando toda a largura do wrapper */
+.ev-block{
+  width:100%;
+  max-width:900px;
+  margin:14px auto;
+  background:#fff;
+  border:1px solid #f2e3a6;
+  border-radius:18px;
+  padding:16px;
+  box-shadow:0 8px 24px rgba(0,0,0,.06);
   text-align:left;
 }
+
+/* IMPORTANTE: não use mais .card na ev-block */
+
   </style>
 </head>
 <body>
@@ -264,7 +297,7 @@
 
 <!-- EVOLUÇÃO -->
 <section id="evolucao" class="hidden">
-  <div class="card">
+  <div class="ev-root">
     <h2 id="evTitle">Minha evolução</h2>
     <p id="evSubtitle" class="hint" style="margin-top:6px;"></p>
 
@@ -1409,8 +1442,8 @@ thumbsWrap.innerHTML = visibleKeys.map(k => {
     `
     : `<p class="hint" style="margin:6px 0 0;">Sem imagens nesta etapa.</p>`;
 
-  return `
-    <div class="ev-block card">
+return `
+  <div class="ev-block" data-ev-stage="${k}">
       <div class="ev-stage-title">${meta ? meta.title : k}</div>
       ${banner}
       ${grid}
@@ -1428,6 +1461,30 @@ thumbsWrap.querySelectorAll(".ev-thumb").forEach(img => {
 });
 
 
+// --- montar upload + voltar dentro do card da etapa pendente ---
+const section = qs("#evolucao");
+
+// garante que não fique solto em lugar nenhum
+hide(uploadWrap);
+
+// move o voltar junto também (se você quer tudo dentro do card atual)
+const btnVoltar = qs("#evVoltar");
+
+if (pending && canInteract){
+  const mount = thumbsWrap.querySelector(`[data-ev-stage="${pending}"]`);
+  if (mount){
+    // mostra upload e move pra dentro do bloco
+    show(uploadWrap);
+    mount.appendChild(uploadWrap);
+
+    // opcional: colocar o Voltar dentro do mesmo bloco, embaixo
+    if (btnVoltar) mount.appendChild(btnVoltar);
+  }
+} else {
+  // se não pode interagir, mantém voltar no final do wrapper (ou onde você preferir)
+  const root = qs("#evolucao .ev-root");
+  if (btnVoltar && root) root.appendChild(btnVoltar);
+}
 
 
 
@@ -1609,6 +1666,7 @@ document.addEventListener("DOMContentLoaded", async () => {
   </div>
 </body>
 </html>
+
 
 
 
