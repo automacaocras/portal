@@ -173,15 +173,35 @@
   border-radius:12px;
 }
 
-/* Ajuste no mobile */
 @media (max-width: 520px){
+  /* card ocupa quase a tela toda, mas com respiro */
   #evImgModal .modal-card{
-    max-height:calc(100vh - 24px);
+    max-height:calc(100vh - 64px);
+    padding:12px;
   }
+
+  /* área rolável mais compacta */
+  #evImgModal .ev-modal-body{
+    padding-bottom:8px;
+  }
+
+  /* imagem bem mais contida */
   #evImgModal #evModalImg{
-    max-height:calc(100vh - 210px);
+    max-height:calc(100vh - 280px); /* 👈 chave do ajuste */
+    object-fit:contain;
+  }
+
+  /* botões não “roubam” altura */
+  #evImgModal .modal-actions{
+    gap:8px;
+  }
+
+  #evImgModal .modal-actions button{
+    padding:10px 12px;
+    font-size:14px;
   }
 }
+
 
   
   .topbar-phone{font-weight:600;font-size:14px;margin-left:6px}
@@ -1889,6 +1909,7 @@ if (chkAut){
   </div>
 </body>
 </html>
+
 
 
 
