@@ -373,6 +373,24 @@
   font-weight:700;
   box-shadow:0 4px 12px rgba(0,0,0,.08);
 }
+/* ===== EVOLUÇÃO: thumbs menores no celular (evita quebrar 3ª imagem) ===== */
+@media (max-width: 520px){
+  #evolucao .ev-stage-grid{
+    display:grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap:8px;
+  }
+
+  #evolucao .ev-thumb{
+    width:100%;
+    height:auto;
+    aspect-ratio: 1 / 1;
+  }
+}
+
+
+  
+}
 
 </style>
 
@@ -481,7 +499,7 @@
 <div id="evDoneMsg" class="hidden">
   <div class="ev-done-box">
     <strong>Você teve uma evolução incrível, <span data-nome>{NOME}</span>! 🎉</strong><br>
-    Parabéns por concluir todas as etapas!
+    Parabéns pela sua dedicação!
   </div>
 </div>
 
@@ -1946,6 +1964,7 @@ if (chkAut){
   </div>
 </body>
 </html>
+
 
 
 
