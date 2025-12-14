@@ -1288,10 +1288,20 @@ function evShowSection(){
 }
 
 function evBackToMenu(){
+  // 🔴 limpa confirmação de envio
+  __evLastSuccess = null;
+
+  const msg = qs("#evSuccessMsg");
+  if (msg){
+    msg.classList.add("hidden");
+    msg.innerHTML = "";
+  }
+
   hide(qs("#evolucao"));
   show(qs("#dashboard"));
-  window.scrollTo({top:0,behavior:"smooth"});
+  window.scrollTo({ top: 0, behavior: "smooth" });
 }
+
 
 function evRenderButton(){
   const btn = qs("#btnEvolucao");
@@ -1723,6 +1733,7 @@ document.addEventListener("DOMContentLoaded", async () => {
   </div>
 </body>
 </html>
+
 
 
 
