@@ -1580,6 +1580,22 @@ function evStageLabel(k){
   if (k === "11") return "11 meses";
   return "";
 }
+function escapeHtml_(s){
+  return String(s||"")
+    .replaceAll("&","&amp;")
+    .replaceAll("<","&lt;")
+    .replaceAll(">","&gt;")
+    .replaceAll('"',"&quot;")
+    .replaceAll("'","&#039;");
+}
+function formatDateBR_(iso){
+  const d = new Date(iso);
+  if (Number.isNaN(d.getTime())) return "";
+  const dd = String(d.getDate()).padStart(2,"0");
+  const mm = String(d.getMonth()+1).padStart(2,"0");
+  const yy = d.getFullYear();
+  return `${dd}/${mm}/${yy}`;
+}
 
   
 function evRenderPage(){
@@ -1668,6 +1684,7 @@ if (!pending){
   
  // ---------- THUMBS (etapas) em BLOCOS ----------
 const imgs = (__evState && __evState.images) ? __evState.images : {};
+const comments = (__evState && __evState.comments) ? __evState.comments : {};
 
 const STAGES = [
   { key:"antes", title:"Antes do curso" },
@@ -1716,14 +1733,32 @@ thumbsWrap.innerHTML = visibleKeys.map(k => {
       </div>
     `
     : `<p class="hint" style="margin:6px 0 0;">Sem imagens nesta etapa.</p>`;
+  const c = comments[k]; // null ou { text, dateISO }
+  const commentHtml = (c && c.text)
+    ? `
+      <div class="ev-comment" style="margin-top:12px;">
+        <div style="font-weight:900;">Comentário do professor:</div>
+        <div style="margin-top:6px; white-space:pre-wrap; word-break:break-word;">
+          ${escapeHtml_(c.text)}
+        </div>
+        <div style="margin-top:10px; font-weight:800; opacity:.75;">
+          ${formatDateBR_(c.dateISO)}
+        </div>
+      </div>
+    `
+    : "";
 
 return `
   <div class="ev-block" data-ev-stage="${k}">
       <div class="ev-stage-title">${meta ? meta.title : k}</div>
       ${banner}
       ${grid}
+      ${commentHtml}
     </div>
   `;
+
+
+  
 }).join("");
 
 thumbsWrap.querySelectorAll(".ev-thumb").forEach(img => {
@@ -1964,6 +1999,7 @@ if (chkAut){
   </div>
 </body>
 </html>
+
 
 
 
