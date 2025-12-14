@@ -1309,7 +1309,8 @@ function evRenderPage(){
   const subtitle = qs("#evSubtitle");
   const thumbsWrap = qs("#evThumbsWrap");
 const uploadWrap = qs("#evUploadWrap");
-if (uploadWrap) uploadWrap.classList.remove("hidden");
+if (uploadWrap) hide(uploadWrap);
+
 
   const authWrap = qs("#evAuthWrap");
 
@@ -1608,6 +1609,7 @@ document.addEventListener("DOMContentLoaded", async () => {
   </div>
 </body>
 </html>
+
 
 
 
