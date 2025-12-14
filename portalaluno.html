@@ -1491,31 +1491,30 @@ thumbsWrap.querySelectorAll(".ev-thumb").forEach(img => {
   });
 });
 
-
-// --- montar upload + voltar dentro do card da etapa pendente ---
-const section = qs("#evolucao");
+// --- montar upload dentro do card da etapa pendente (OK), mas VOLTAR sempre fora ---
+const section  = qs("#evolucao");
 
 // garante que não fique solto em lugar nenhum
 hide(uploadWrap);
 
-// move o voltar junto também (se você quer tudo dentro do card atual)
 const btnVoltar = qs("#evVoltar");
+const root = qs("#evolucao .ev-root");
 
+// 1) Upload pode ficar dentro do card pendente (quando liberado)
 if (pending && canInteract){
   const mount = thumbsWrap.querySelector(`[data-ev-stage="${pending}"]`);
   if (mount){
-    // mostra upload e move pra dentro do bloco
     show(uploadWrap);
     mount.appendChild(uploadWrap);
-
-    // opcional: colocar o Voltar dentro do mesmo bloco, embaixo
-    if (btnVoltar) mount.appendChild(btnVoltar);
   }
-} else {
-  // se não pode interagir, mantém voltar no final do wrapper (ou onde você preferir)
-  const root = qs("#evolucao .ev-root");
-  if (btnVoltar && root) root.appendChild(btnVoltar);
 }
+
+// 2) VOLTAR sempre no final do root (fora dos cards brancos)
+if (btnVoltar && root){
+  root.appendChild(btnVoltar);
+  btnVoltar.style.display = "block"; // garante que nunca “some”
+}
+
 
 
 
@@ -1697,6 +1696,7 @@ document.addEventListener("DOMContentLoaded", async () => {
   </div>
 </body>
 </html>
+
 
 
 
