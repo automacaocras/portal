@@ -225,9 +225,11 @@
     <p id="evSubtitle" class="hint" style="margin-top:6px;"></p>
 
     <div id="evThumbsWrap" class="ev-thumbs"></div>
+<div id="evUploadWrap" class="hidden" style="margin-top:14px;">
+  <div id="evSuccessMsg" class="hidden"></div>
 
-    <div id="evUploadWrap" class="hidden" style="margin-top:14px;">
-<div id="evFilesWrap">
+  <div id="evFilesWrap">
+
         <input type="file" class="evFileItem" accept="image/*">
         <div class="thumb-hint">Formatos JPG/PNG. Até 3 imagens.</div>
       </div>
@@ -1110,6 +1112,33 @@ startLoadingMessageRotation();
 const EV_MAX_FILES = 3;
 let __evState = null;
 
+function driveFileIdFromUrl(url){
+  const s = String(url||"").trim();
+
+  // formato: /d/ID/
+  let m = s.match(/\/d\/([a-zA-Z0-9_-]{10,})/);
+  if (m) return m[1];
+
+  // formato: ?id=ID (inclui open?id=ID)
+  m = s.match(/[?&]id=([a-zA-Z0-9_-]{10,})/);
+  if (m) return m[1];
+
+  // formato: uc?export=view&id=ID
+  m = s.match(/uc\?export=view&id=([a-zA-Z0-9_-]{10,})/);
+  if (m) return m[1];
+
+  return "";
+}
+
+
+function driveThumbUrl(url, size = 300){
+  const id = driveFileIdFromUrl(url);
+  if (!id) return url; // fallback
+  return `https://drive.google.com/thumbnail?id=${id}&sz=w${size}`;
+}
+
+
+  
 function evEnabled(){ return !!(bootstrap && bootstrap.evolucao && bootstrap.evolucao.enabled); }
 
 function evShowSection(){
@@ -1209,9 +1238,15 @@ function evRenderPage(){
   const title = qs("#evTitle");
   const subtitle = qs("#evSubtitle");
   const thumbsWrap = qs("#evThumbsWrap");
-  const uploadWrap = qs("#evUploadWrap");
+const uploadWrap = qs("#evUploadWrap");
+if (uploadWrap) uploadWrap.classList.remove("hidden");
+
   const authWrap = qs("#evAuthWrap");
 
+const msg = qs("#evSuccessMsg");
+if (msg){ msg.classList.add("hidden"); msg.innerHTML = ""; }
+
+  
   if (!__evState || !__evState.enabled){
     title.textContent = "Minha evolução";
     subtitle.textContent = "Indisponível no momento.";
@@ -1252,51 +1287,73 @@ function evRenderPage(){
     hide(uploadWrap);
   }
 
-  // Verificando se a etapa está liberada, se não, ocultamos
-  const imgs = (__evState && __evState.images) ? __evState.images : {};
-  const stages = [
-    { key: "antes", title: "Antes do curso" },
-    { key: "2",     title: "Depois de 2 meses" },
-    { key: "6",     title: "Depois de 6 meses" },
-    { key: "11",    title: "Depois de 11 meses" },
-  ];
+ // ---------- THUMBS (etapas) ----------
+const imgs = (__evState && __evState.images) ? __evState.images : {};
 
-  // verifica se tem alguma imagem em qualquer etapa
-  const hasAny = stages.some(s => Array.isArray(imgs[s.key]) && imgs[s.key].length);
+const STAGES = [
+  { key:"antes", title:"Antes do curso" },
+  { key:"2",     title:"Depois de 2 meses" },
+  { key:"6",     title:"Depois de 6 meses" },
+  { key:"11",    title:"Depois de 11 meses" },
+];
 
-  if (!hasAny){
-    thumbsWrap.innerHTML = `<p class="hint" style="margin:10px 0 0;">Sem imagens registradas ainda.</p>`;
+// Regras:
+// - Se concluiu tudo (pending == null): mostra TODAS as etapas
+// - Se ainda tem pendência:
+//    - se canInteract (etapa atual liberada): mostra todas as etapas até a etapa pendente (incluindo ela)
+//    - se NÃO pode interagir (etapa pendente ainda NÃO liberou): mostra só as etapas ANTERIORES (liberadas)
+let visibleKeys = [];
+if (!pending){
+  visibleKeys = STAGES.map(s => s.key);
+} else {
+  const idx = STAGES.findIndex(s => s.key === pending);
+  if (idx === -1){
+    visibleKeys = ["antes"];
   } else {
-    thumbsWrap.innerHTML = stages.map(s => {
-      const arr = Array.isArray(imgs[s.key]) ? imgs[s.key] : [];
-      if (!arr.length){
-        return `
-          <div class="ev-stage">
-            <div class="ev-stage-title">${s.title}</div>
-            <p class="hint" style="margin:6px 0 0;">Sem imagens nesta etapa.</p>
-          </div>
-        `;
-      }
-      // Verifica se a etapa já foi liberada para o aluno, caso contrário, esconde
-      if (daysToUnlock > 0 && (s.key === "2" || s.key === "6" || s.key === "11")) {
-        return ""; // Se a etapa não está liberada, não exibe.
-      }
-
-      return `
-        <div class="ev-stage">
-          <div class="ev-stage-title">${s.title}</div>
-          <div class="ev-stage-grid">
-            ${arr.map(url => `<img class="ev-thumb" src="${url}" alt="Imagem" title="Clique para ampliar">`).join("")}
-          </div>
-        </div>
-      `;
-    }).join("");
-
-    // clique para ampliar
-    thumbsWrap.querySelectorAll(".ev-thumb").forEach(img => {
-      img.addEventListener("click", ()=> evOpenModal(img.src));
-    });
+    visibleKeys = canInteract
+      ? STAGES.slice(0, idx + 1).map(s => s.key)
+      : STAGES.slice(0, idx).map(s => s.key);
   }
+}
+
+// Se não tiver nenhuma etapa visível (caso extremo), cai no "antes"
+if (!visibleKeys.length) visibleKeys = ["antes"];
+
+// Render em ordem
+thumbsWrap.innerHTML = visibleKeys.map(k => {
+  const meta = STAGES.find(s => s.key === k);
+  const arr = Array.isArray(imgs[k]) ? imgs[k] : [];
+
+  // monta miniaturas (Drive thumbnail)
+  const grid = arr.length
+    ? `
+      <div class="ev-stage-grid">
+        ${arr.map(url => {
+          const thumb = driveThumbUrl(url, 300);
+          const full  = driveThumbUrl(url, 1600);
+          return `<img class="ev-thumb" src="${thumb}" data-full="${full}" alt="Imagem" title="Clique para ampliar">`;
+        }).join("")}
+      </div>
+    `
+    : `<p class="hint" style="margin:6px 0 0;">Sem imagens nesta etapa.</p>`;
+
+  return `
+    <div class="ev-stage">
+      <div class="ev-stage-title">${meta ? meta.title : k}</div>
+      ${grid}
+    </div>
+  `;
+}).join("");
+
+// clique para ampliar
+thumbsWrap.querySelectorAll(".ev-thumb").forEach(img => {
+  img.addEventListener("click", ()=> {
+    const full = img.getAttribute("data-full") || img.src;
+    evOpenModal(full);
+  });
+});
+
+
 
   // guarda etapa atual no DOM
   qs("#evolucao").dataset.pendingStage = pending || "";
@@ -1349,7 +1406,8 @@ async function evEnviar(){
       email: sessao.email,
       nome: bootstrap.nome || "",
       stage: pending,
-      autorizacao: (pending === "2") ? true : false,
+autorizacao: (pending === "2") ? !!qs("#chkAutorizo")?.checked : false,
+
       files
     };
 
@@ -1371,6 +1429,19 @@ async function evEnviar(){
     // botão no dashboard muda e a página re-renderiza
     evRenderButton();
     evRenderPage();
+// CONFIRMAÇÃO SIMPLES
+const msg = qs("#evSuccessMsg");
+if (msg){
+  msg.classList.remove("hidden"); // ✅ mostra
+  msg.innerHTML = `
+    <div class="sucesso-msg" style="margin-top:12px;">
+      <h3 style="margin:0 0 6px;">✅ Enviado!</h3>
+      <p style="margin:0;">Suas imagens foram registradas nesta etapa.</p>
+    </div>
+  `;
+}
+
+
 
 
     
@@ -1461,6 +1532,7 @@ document.addEventListener("DOMContentLoaded", async () => {
   </div>
 </body>
 </html>
+
 
 
 
