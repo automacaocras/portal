@@ -167,13 +167,19 @@
   .ev-green{ background:#28a745; color:#fff; }
   .ev-orange{ background:#f4a300; color:#111; }
 
-  .sucesso-msg{
-    background-color:#e6f7e1;
-    padding:20px;
-    border-radius:10px;
-    text-align:center;
-    box-shadow:0 4px 12px rgba(0,0,0,0.1);
-  }
+#evolucao #evSuccessMsg{
+  max-width:900px;
+  margin:10px auto 0;
+}
+.sucesso-msg{
+  background-color:#e6f7e1;
+  padding:16px;
+  border-radius:12px;
+  text-align:center;
+  box-shadow:0 4px 12px rgba(0,0,0,0.08);
+  border:1px solid rgba(40,167,69,.25);
+}
+
 
   /* =========================================================
      EVOLUÇÃO — SEM “CARD BRANCO POR TRÁS” (APENAS ETAPAS)
@@ -332,9 +338,14 @@
     <h2 id="evTitle">Minha evolução</h2>
     <p id="evSubtitle" class="hint" style="margin-top:6px;"></p>
 
+    <!-- ✅ CONFIRMAÇÃO DE ENVIO (SEMPRE FORA DOS CARDS) -->
+    <div id="evSuccessMsg" class="hidden"></div>
+
     <div id="evThumbsWrap" class="ev-thumbs"></div>
+
+
+
 <div id="evUploadWrap" class="hidden" style="margin-top:14px;">
-  <div id="evSuccessMsg" class="hidden"></div>
 
   <div id="evFilesWrap" class="ev-files">
     <input type="file" class="evFileItem" accept="image/*">
@@ -1223,6 +1234,7 @@ let __evState = null;
 
 let __evModalStage = "";
 let __evModalUrls = [];
+let __evLastSuccess = null; // { html: string, at: number }
 
 function evOpenAllFromModalStage(){
   if (!__evModalUrls || !__evModalUrls.length){
@@ -1379,7 +1391,19 @@ if (uploadWrap) hide(uploadWrap);
   const authWrap = qs("#evAuthWrap");
 
 const msg = qs("#evSuccessMsg");
-if (msg){ msg.classList.add("hidden"); msg.innerHTML = ""; }
+if (msg){
+  // mostra somente se existir um sucesso recente (ex.: últimos 10 min)
+  const ok = __evLastSuccess && (Date.now() - __evLastSuccess.at) < 10 * 60 * 1000;
+  if (ok){
+    msg.classList.remove("hidden");
+    msg.innerHTML = __evLastSuccess.html;
+  } else {
+    msg.classList.add("hidden");
+    msg.innerHTML = "";
+    __evLastSuccess = null;
+  }
+}
+
 
   
   if (!__evState || !__evState.enabled){
@@ -1586,23 +1610,26 @@ autorizacao: (pending === "2") ? !!qs("#chkAutorizo")?.checked : false,
       return;
     }
 
-    // atualiza bootstrap.evolucao com a resposta
-    if (d.evolucao) bootstrap.evolucao = d.evolucao;
+// atualiza bootstrap.evolucao com a resposta
+if (d.evolucao) bootstrap.evolucao = d.evolucao;
 
-    // botão no dashboard muda e a página re-renderiza
-    evRenderButton();
-    evRenderPage();
-// CONFIRMAÇÃO SIMPLES
-const msg = qs("#evSuccessMsg");
-if (msg){
-  msg.classList.remove("hidden"); // ✅ mostra
-  msg.innerHTML = `
-    <div class="sucesso-msg" style="margin-top:12px;">
+// ✅ grava a confirmação (para sobreviver ao re-render)
+__evLastSuccess = {
+  at: Date.now(),
+  html: `
+    <div class="sucesso-msg">
       <h3 style="margin:0 0 6px;">✅ Enviado!</h3>
       <p style="margin:0;">Suas imagens foram registradas nesta etapa.</p>
     </div>
-  `;
-}
+  `
+};
+
+// botão no dashboard muda e a página re-renderiza
+evRenderButton();
+evRenderPage();
+
+// ✅ garante que o usuário veja o aviso no topo
+window.scrollTo({ top: 0, behavior: "smooth" });
 
 
 
@@ -1696,6 +1723,7 @@ document.addEventListener("DOMContentLoaded", async () => {
   </div>
 </body>
 </html>
+
 
 
 
