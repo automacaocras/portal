@@ -96,6 +96,34 @@
     .topbar-phone a{color:#000;text-decoration:underline;cursor:pointer}
     .live-badge{display:none;width:max-content;margin:0 auto 10px;padding:6px 14px;background:#c9f96a;color:#1a1a1a;border-radius:8px;font-weight:800}
     .box-feedback.is-live{box-shadow:0 0 0 3px rgba(114,210,0,.25), 0 8px 24px rgba(0,0,0,.06)}
+
+    .ev-thumbs{
+  display:flex;
+  flex-wrap:wrap;
+  gap:10px;
+  justify-content:center;
+  margin-top:12px;
+}
+.ev-thumb{
+  width:120px;
+  height:120px;
+  object-fit:cover;
+  border-radius:12px;
+  border:1px solid #eee;
+  cursor:pointer;
+  box-shadow:0 6px 16px rgba(0,0,0,.08);
+  background:#fafafa;
+}
+.ev-badge{
+  display:inline-block;
+  padding:6px 10px;
+  border-radius:10px;
+  font-weight:800;
+  font-size:12px;
+}
+.ev-green{ background:#28a745; color:#fff; }
+.ev-orange{ background:#f4a300; color:#111; }
+
   </style>
 </head>
 <body>
@@ -137,6 +165,12 @@
         <p><a id="ultimaGravada" href="#" target="_blank" rel="noopener">[link]</a></p>
       </div>
 
+<button id="btnEvolucao" class="btn-cta" type="button" style="display:none;">
+
+  Minha evolução
+</button>
+
+      
       <div class="links-uteis" style="text-align:center; margin-top:25px;">
         <strong>Links Úteis:</strong><br>
         <a href="https://chat.whatsapp.com/E8ruCXpqoK5122AWBGowwp?mode=wwt" target="_blank" rel="noopener noreferrer" style="display:inline-block; margin-top:8px; color:#075e54; font-weight:600; text-decoration:none;">💬 Grupo dos alunos no WhatsApp</a>
@@ -152,6 +186,53 @@
       </p>
     </section>
 
+<!-- EVOLUÇÃO -->
+<section id="evolucao" class="hidden">
+  <div class="card">
+    <h2 id="evTitle">Minha evolução</h2>
+    <p id="evSubtitle" class="hint" style="margin-top:6px;"></p>
+
+    <div id="evThumbsWrap" class="ev-thumbs"></div>
+
+    <div id="evUploadWrap" class="hidden" style="margin-top:14px;">
+<div id="evFilesWrap">
+        <input type="file" class="evFileItem" accept="image/*">
+        <div class="thumb-hint">Formatos JPG/PNG. Até 3 imagens.</div>
+      </div>
+
+      <div id="evAuthWrap" class="hidden" style="text-align:left;margin-top:10px;">
+        <label style="display:flex;gap:10px;align-items:flex-start;font-weight:700;">
+          <input id="chkAutorizo" type="checkbox" style="margin-top:4px;">
+          <span>Eu permito o curso divulgar as imagens da minha evolução de forma a chamar novos alunos.</span>
+        </label>
+      </div>
+
+      <div class="flex-row" style="margin-top:10px;">
+        <button id="evAddImg" class="btn-sec" type="button" data-busy style="background:#28a745;color:#fff;border:none;">
+          Adicionar imagem
+        </button>
+        <button id="evReset" class="btn-sec" type="button" data-busy>Resetar imagens</button>
+      </div>
+
+      <button id="evEnviar" class="btn-cta" type="button" data-busy style="margin-top:12px;">Enviar</button>
+    </div>
+
+    <button id="evVoltar" class="btn-back" type="button" data-busy style="margin-top:12px;">Voltar</button>
+  </div>
+</section>
+
+<!-- Modal de imagem -->
+<div id="evImgModal" class="modal" aria-hidden="true">
+  <div class="modal-card" style="width:min(860px,92vw);">
+    <h3 style="margin:0 0 10px;text-align:center;">Visualização</h3>
+    <img id="evModalImg" alt="Imagem" style="width:100%;border-radius:12px;display:block;">
+    <div class="modal-actions">
+      <button id="evCloseModal" class="btn-neutral" type="button">Fechar</button>
+    </div>
+  </div>
+</div>
+
+    
     <!-- ENVIO -->
     <section id="envio" class="hidden">
       <p id="artsInfo" class="envio-arts-info hidden">
@@ -705,6 +786,8 @@ async function carregarBootstrap(curso, email){
     }
 
     updateUIForTokens();
+        evRenderButton();
+
  } catch (e) {
   console.error("Erro no carregarBootstrap:", e);
   alert("❌ Falha ao carregar seus dados. Tente novamente.\n\nDetalhes técnicos: " + (e?.message || e));
@@ -989,6 +1072,262 @@ startLoadingMessageRotation();
 
   }
 }
+/* =========================
+ * EVOLUÇÃO – Front
+ * ========================= */
+const EV_MAX_FILES = 3;
+let __evState = null;
+
+function evEnabled(){ return !!(bootstrap && bootstrap.evolucao && bootstrap.evolucao.enabled); }
+
+function evShowSection(){
+  hide(qs("#dashboard"));
+  hide(qs("#envio"));
+  hide(qs("#sucesso"));
+  show(qs("#evolucao"));
+  window.scrollTo({top:0,behavior:"smooth"});
+}
+
+function evBackToMenu(){
+  hide(qs("#evolucao"));
+  show(qs("#dashboard"));
+  window.scrollTo({top:0,behavior:"smooth"});
+}
+
+function evRenderButton(){
+  const btn = qs("#btnEvolucao");
+  if (!btn) return;
+  if (!evEnabled()){
+    btn.style.display = "none";
+    return;
+  }
+  btn.style.display = "block";
+
+  const st = bootstrap.evolucao;
+  btn.style.background = (st.buttonState === "green") ? "#28a745" : "#f4a300";
+  btn.style.color      = (st.buttonState === "green") ? "#fff" : "#111";
+}
+
+function evGetAllThumbs(){
+  if (!__evState) return [];
+  const imgs = __evState.images || {};
+  const out = [];
+  ["antes","2","6","11"].forEach(k=>{
+    (imgs[k]||[]).forEach(url => out.push({stage:k, url}));
+  });
+  return out;
+}
+
+function evOpenModal(url){
+  qs("#evModalImg").src = url;
+  const m = qs("#evImgModal");
+  m.classList.add("show");
+  m.setAttribute("aria-hidden","false");
+}
+function evCloseModal(){
+  const m = qs("#evImgModal");
+  m.classList.remove("show");
+  m.setAttribute("aria-hidden","true");
+  qs("#evModalImg").removeAttribute("src");
+}
+
+function evResetFiles(){
+  qs("#evFilesWrap").innerHTML =
+    '<input type="file" class="evFileItem" accept="image/*">' +
+    '<div class="thumb-hint">Formatos JPG/PNG. Até 3 imagens.</div>';
+  evUpdateAddBtn();
+}
+
+function evAddFileInput(){
+  const inputs = Array.from(document.querySelectorAll("#evFilesWrap input[type='file']"));
+  if (inputs.length >= EV_MAX_FILES) return;
+  const inp = document.createElement("input");
+  inp.type = "file";
+  inp.accept = "image/*";
+  inp.className = "evFileItem";
+  qs("#evFilesWrap").insertBefore(inp, qs("#evFilesWrap").lastElementChild);
+  evUpdateAddBtn();
+}
+
+function evCountSelected(){
+  return Array.from(document.querySelectorAll("#evFilesWrap input[type='file']"))
+    .map(i=>i.files && i.files[0]).filter(Boolean).length;
+}
+
+function evUpdateAddBtn(){
+  const inputs = Array.from(document.querySelectorAll("#evFilesWrap input[type='file']"));
+  const btnAdd = qs("#evAddImg");
+  const selected = evCountSelected();
+  const canAdd = inputs.length < EV_MAX_FILES && selected < EV_MAX_FILES;
+  if (btnAdd) btnAdd.style.display = canAdd ? "inline-block" : "none";
+}
+
+function evStageLabel(k){
+  if (k === "antes") return "Antes do curso";
+  if (k === "2") return "2 meses";
+  if (k === "6") return "6 meses";
+  if (k === "11") return "11 meses";
+  return "";
+}
+
+function evRenderPage(){
+  __evState = bootstrap.evolucao;
+
+  const title = qs("#evTitle");
+  const subtitle = qs("#evSubtitle");
+  const thumbsWrap = qs("#evThumbsWrap");
+  const uploadWrap = qs("#evUploadWrap");
+  const authWrap = qs("#evAuthWrap");
+
+  if (!__evState || !__evState.enabled){
+    title.textContent = "Minha evolução";
+    subtitle.textContent = "Indisponível no momento.";
+    thumbsWrap.innerHTML = "";
+    hide(uploadWrap);
+    return;
+  }
+
+  const pending = __evState.pendingStage;         // "antes"|"2"|"6"|"11"|null
+  const canInteract = !!__evState.canInteract;
+  const daysToUnlock = Number(__evState.daysToUnlock || 0);
+
+  // título/subtítulo
+  title.textContent = "Minha evolução";
+
+  if (!pending){
+    subtitle.innerHTML = `<span class="ev-badge ev-orange">Concluído</span> Você já completou todas as etapas.`;
+    hide(uploadWrap);
+  } else if (canInteract){
+    // liberado para envio da etapa pendente
+    subtitle.innerHTML = `<span class="ev-badge ev-green">Disponível</span> Envie até 3 imagens da etapa: <strong>${evStageLabel(pending)}</strong>.`;
+    show(uploadWrap);
+
+    // checkbox só na etapa 2 meses
+    if (pending === "2"){
+      show(authWrap);
+    } else {
+      hide(authWrap);
+      const chk = qs("#chkAutorizo");
+      if (chk) chk.checked = false;
+    }
+
+    // reseta inputs sempre ao entrar com envio
+if (!document.querySelector("#evFilesWrap .evFileItem")) {
+  evResetFiles();
+} else {
+  evUpdateAddBtn();
+}
+
+
+  } else {
+    // bloqueado (a etapa pendente ainda não liberou)
+    subtitle.innerHTML = `<span class="ev-badge ev-orange">Aguardando</span> Faltam <strong>${daysToUnlock}</strong> dia(s) para você conseguir subir novas artes!`;
+    hide(uploadWrap);
+  }
+
+  // thumbs
+  const all = evGetAllThumbs();
+  if (!all.length){
+    thumbsWrap.innerHTML = `<p class="hint" style="margin:10px 0 0;">Sem imagens registradas ainda.</p>`;
+  } else {
+    thumbsWrap.innerHTML = all.map(t => `
+      <img class="ev-thumb" src="${t.url}" alt="Imagem" title="Clique para ampliar">
+    `).join("");
+    thumbsWrap.querySelectorAll(".ev-thumb").forEach((img, idx)=>{
+      img.addEventListener("click", ()=> evOpenModal(img.src));
+    });
+  }
+
+  // guarda etapa atual no DOM
+  qs("#evolucao").dataset.pendingStage = pending || "";
+  qs("#evolucao").dataset.canInteract = canInteract ? "1" : "0";
+}
+
+async function evToBase64(file){
+  return await new Promise((res, rej)=>{
+    const fr = new FileReader();
+    fr.onload = ()=> res(String(fr.result).split(",")[1]);
+    fr.onerror = rej;
+    fr.readAsDataURL(file);
+  });
+}
+
+async function evEnviar(){
+  const section = qs("#evolucao");
+  const pending = section.dataset.pendingStage || "";
+  const canInteract = section.dataset.canInteract === "1";
+
+  if (!pending) return alert("Você já concluiu todas as etapas.");
+  if (!canInteract) return alert("Ainda não é possível enviar nesta etapa.");
+
+  const chosen = Array.from(document.querySelectorAll("#evFilesWrap input[type='file']"))
+    .map(i=>i.files && i.files[0]).filter(Boolean);
+
+  if (!chosen.length) return alert("Envie pelo menos 1 imagem.");
+  if (chosen.length > EV_MAX_FILES) return alert(`Máximo de ${EV_MAX_FILES} imagens.`);
+
+  if (pending === "2"){
+    const chk = qs("#chkAutorizo");
+    if (!chk || !chk.checked){
+      return alert("Você precisa marcar a autorização para enviar nesta etapa.");
+    }
+  }
+
+  setLoading(true, "Enviando sua evolução…");
+
+  try{
+    const files = [];
+    for (const f of chosen){
+      const b64 = await evToBase64(f);
+      files.push({ name:f.name, type:f.type, content:b64 });
+    }
+
+    const payload = {
+      action: "uploadEvolucao",
+      curso: sessao.curso,
+      email: sessao.email,
+      nome: bootstrap.nome || "",
+      stage: pending,
+      autorizacao: (pending === "2") ? true : false,
+      files
+    };
+
+    const r = await fetch(API_URL, { method:"POST", body: JSON.stringify(payload) });
+    if (!r.ok) throw new Error(`HTTP ${r.status}`);
+    const d = await r.json();
+
+    if (!d.ok){
+      if (d.message === "need_authorization") alert("Marque a autorização para enviar.");
+      else if (d.message === "stage_locked") alert("Essa etapa ainda não foi liberada.");
+      else if (d.message === "stage_not_pending") alert("Essa não é a etapa pendente atual.");
+      else alert("Erro: " + (d.message || "falha"));
+      return;
+    }
+
+    // atualiza bootstrap.evolucao com a resposta
+    if (d.evolucao) bootstrap.evolucao = d.evolucao;
+
+    // botão no dashboard muda e a página re-renderiza
+    evRenderButton();
+    evRenderPage();
+
+    alert("Enviado!");
+  } catch(e){
+    console.error(e);
+    alert("Falha ao enviar: " + (e?.message || e));
+  } finally {
+    setLoading(false);
+  }
+}
+
+function abrirEvolucao(){
+  if (!evEnabled()){
+    alert("Recurso indisponível no momento.");
+    return;
+  }
+  evShowSection();
+  evRenderPage();
+}
 
 
 /* --------- bootstrap do DOM --------- */
@@ -1020,6 +1359,24 @@ document.addEventListener("DOMContentLoaded", async () => {
   qs("#filesWrap").addEventListener("change", () => updateUIForTokens());
   document.addEventListener("visibilitychange", () => { if (!document.hidden) refreshBootstrap(); });
 
+  // evolução
+  const btnEv = qs("#btnEvolucao");
+  if (btnEv) btnEv.onclick = abrirEvolucao;
+
+  qs("#evVoltar").onclick = evBackToMenu;
+  qs("#evAddImg").onclick = evAddFileInput;
+  qs("#evReset").onclick  = evResetFiles;
+  qs("#evEnviar").onclick = evEnviar;
+
+  qs("#evCloseModal").onclick = evCloseModal;
+  qs("#evImgModal").addEventListener("click", (ev)=>{
+    if (ev.target && ev.target.id === "evImgModal") evCloseModal();
+  });
+
+  // re-render button quando bootstrap carregar
+  evRenderButton();
+
+  
   updateAddBtnVisibility();
   updateLiveBadgeFromBootstrap();
   setInterval(updateLiveBadgeFromBootstrap, 15_000);
@@ -1042,6 +1399,7 @@ document.addEventListener("DOMContentLoaded", async () => {
   </div>
 </body>
 </html>
+
 
 
 
