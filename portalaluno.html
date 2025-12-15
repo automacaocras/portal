@@ -472,7 +472,29 @@
   .cb-title{ font-size:16px; }
   .cb-img{ max-width:320px; }
 }
+  
+/* ===== Tremida tipo telefone (em ciclos) ===== */
+@keyframes ev-phone-wiggle {
+  0%   { transform: translateX(0); }
+  5%   { transform: translateX(-2px); }
+  10%  { transform: translateX(2px); }
+  15%  { transform: translateX(-2px); }
+  20%  { transform: translateX(2px); }
+  25%  { transform: translateX(-1px); }
+  30%  { transform: translateX(1px); }
+  35%  { transform: translateX(0); }
 
+  /* pausa */
+  100% { transform: translateX(0); }
+}
+
+/* ciclo completo = tremidas + pausa */
+.ev-attention{
+  animation: ev-phone-wiggle 2.8s ease-in-out infinite;
+}
+.ev-attention:hover{
+  animation-play-state: paused;
+}
 
 </style>
 
@@ -1670,12 +1692,19 @@ function evRenderButton(){
     btn.style.display = "none";
     return;
   }
+
   btn.style.display = "block";
 
   const st = bootstrap.evolucao;
-  btn.style.background = (st.buttonState === "green") ? "#28a745" : "#f4a300";
-  btn.style.color      = (st.buttonState === "green") ? "#fff" : "#111";
+  const isGreen = (st.buttonState === "green");
+
+  btn.style.background = isGreen ? "#28a745" : "#f4a300";
+  btn.style.color      = isGreen ? "#fff" : "#111";
+
+  // 👇 tremida tipo telefone
+  btn.classList.toggle("ev-attention", isGreen);
 }
+
 
 function evGetAllThumbs(){
   if (!__evState) return [];
@@ -2641,6 +2670,7 @@ if (chkAut){
   </div>
 </body>
 </html>
+
 
 
 
