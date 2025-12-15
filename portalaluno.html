@@ -419,7 +419,7 @@
 
 
   
-}
+
 
 </style>
 
@@ -1578,17 +1578,6 @@ function evResetFiles(){
 
 
 
-function evAddFileInput(){
-  const inputs = Array.from(document.querySelectorAll("#evFilesWrap input[type='file']"));
-  if (inputs.length >= EV_MAX_FILES) return;
-  const inp = document.createElement("input");
-  inp.type = "file";
-  inp.accept = "image/*";
-  inp.className = "evFileItem";
-  qs("#evFilesWrap").insertBefore(inp, qs("#evFilesWrap").lastElementChild);
-  evUpdateAddBtn();
-}
-
 function evCountSelected(){
   return Array.from(document.querySelectorAll("#evFilesWrap input[type='file']"))
     .map(i=>i.files && i.files[0]).filter(Boolean).length;
@@ -1722,21 +1711,21 @@ const STAGES = [
   { key:"11",    title:"Depois de 11 meses" },
 ];
 
-// visibilidade (igual ao seu)
+// visibilidade por tempo (novo)
+// - se concluído: mostra tudo
+// - senão: mostra até unlockedIndex
 let visibleKeys = [];
+
 if (!pending){
   visibleKeys = STAGES.map(s => s.key);
 } else {
-  const idx = STAGES.findIndex(s => s.key === pending);
-  if (idx === -1){
-    visibleKeys = ["antes"];
-  } else {
-    visibleKeys = canInteract
-      ? STAGES.slice(0, idx + 1).map(s => s.key)
-      : STAGES.slice(0, idx).map(s => s.key);
-  }
+  const maxIdx = Number(__evState.unlockedIndex ?? 0);
+  visibleKeys = STAGES.slice(0, Math.max(1, maxIdx + 1)).map(s => s.key);
 }
+
 if (!visibleKeys.length) visibleKeys = ["antes"];
+
+  
 
 thumbsWrap.innerHTML = visibleKeys.map(k => {
   const meta = STAGES.find(s => s.key === k);
@@ -2029,6 +2018,7 @@ if (chkAut){
   </div>
 </body>
 </html>
+
 
 
 
