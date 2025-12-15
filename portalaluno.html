@@ -547,10 +547,10 @@
 
     <div style="max-width:900px;margin:14px auto 0;text-align:left;">
       <label style="margin:0 0 6px;">Ajustar imagem antes</label>
-      <input id="evFinalZoomAntes" type="range" min="0.7" max="2.5" step="0.01" value="1">
+<input id="evFinalZoomAntes" type="range" min="0" max="1" step="0.001" value="0.5">
 
       <label style="margin:12px 0 6px;">Ajustar imagem depois</label>
-      <input id="evFinalZoomDepois" type="range" min="0.7" max="2.5" step="0.01" value="1">
+<input id="evFinalZoomDepois" type="range" min="0" max="1" step="0.001" value="0.5">
     </div>
 
     <div class="flex-row" style="margin-top:14px;">
@@ -1994,14 +1994,15 @@ const evFinal = {
   frameImg: null,
   beforeIdx: 0,
   afterIdx: 0,
-  beforeZoom: 1,
-  afterZoom: 1,
+  beforePan: 0.5,
+  afterPan: 0.5,
   beforeUrls: [],
   afterUrls: [],
-  _imgCache: new Map(),   // originalUrl -> Image
+  _imgCache: new Map(),
   _loading: false,
   _raf: 0,
 };
+
 
 
 // ✅ MÁSCARA FINAL — medidas reais do frame (1080x1350)
@@ -2072,21 +2073,29 @@ async function evFinal_ensureFrame(){
 }
 
 // cover que preenche 100% e centraliza (focalY=0.5 => não “gruda no topo”)
-function evFinal_drawCover(ctx, img, dx, dy, dw, dh, zoom=1, focalY=0.5){
+function evFinal_drawCover(ctx, img, dx, dy, dw, dh, panX = 0.5){
   const iw = img.naturalWidth || img.width;
   const ih = img.naturalHeight || img.height;
   if (!iw || !ih) return;
 
-  const scale = Math.max(dw / iw, dh / ih) * (zoom || 1);
+  // 🔒 trava pela ALTURA da máscara
+  const scale = dh / ih;
+
   const sw = iw * scale;
   const sh = ih * scale;
 
-  const sx = dx + (dw - sw) / 2;
-  const fy = Number.isFinite(focalY) ? focalY : 0.5;
-  const sy = dy + (dh - sh) * fy;
+  // nunca pan vertical
+  const sy = dy;
+
+  // pan horizontal (0 = esquerda | 0.5 = centro | 1 = direita)
+  const maxOffset = Math.max(0, sw - dw);
+  const offsetX = maxOffset * panX;
+
+  const sx = dx - offsetX;
 
   ctx.drawImage(img, sx, sy, sw, sh);
 }
+
 
 function evFinal_scheduleRender(){
   if (evFinal._raf) cancelAnimationFrame(evFinal._raf);
@@ -2150,7 +2159,8 @@ async function evFinal_render(){
       ctx.beginPath();
       ctx.rect(left.x, left.y, left.w, left.h);
       ctx.clip();
-      evFinal_drawCover(ctx, img, left.x, left.y, left.w, left.h, evFinal.beforeZoom, 0.5);
+evFinal_drawCover(ctx, img, left.x, left.y, left.w, left.h, evFinal.beforePan);
+
       ctx.restore();
     }
   }
@@ -2162,7 +2172,8 @@ async function evFinal_render(){
       ctx.beginPath();
       ctx.rect(right.x, right.y, right.w, right.h);
       ctx.clip();
-      evFinal_drawCover(ctx, img, right.x, right.y, right.w, right.h, evFinal.afterZoom, 0.5);
+evFinal_drawCover(ctx, img, right.x, right.y, right.w, right.h, evFinal.afterPan);
+
       ctx.restore();
     }
   }
@@ -2243,14 +2254,15 @@ function evFinal_showIfDone(){
   qs("#evFinalPrevAntes").onclick = ()=> evFinal_change("before");
   qs("#evFinalNextDepois").onclick = ()=> evFinal_change("after");
 
-  qs("#evFinalZoomAntes").oninput = (e)=>{
-    evFinal.beforeZoom = Number(e.target.value || 1);
-    evFinal_scheduleRender();
-  };
-  qs("#evFinalZoomDepois").oninput = (e)=>{
-    evFinal.afterZoom = Number(e.target.value || 1);
-    evFinal_scheduleRender();
-  };
+qs("#evFinalZoomAntes").oninput = (e)=>{
+  evFinal.beforePan = Number(e.target.value || 0.5);
+  evFinal_scheduleRender();
+};
+
+qs("#evFinalZoomDepois").oninput = (e)=>{
+  evFinal.afterPan = Number(e.target.value || 0.5);
+  evFinal_scheduleRender();
+};
 
   // ✅ Preload antes de mostrar o card
   evFinal_preloadAll().catch(console.error);
@@ -2350,6 +2362,7 @@ if (chkAut){
   </div>
 </body>
 </html>
+
 
 
 
