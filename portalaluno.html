@@ -2066,28 +2066,50 @@ async function evFinal_render(){
 
   ctx.clearRect(0,0,canvas.width,canvas.height);
 
-  // BEFORE (antes)
+  // 1) DESENHA O FRAME PRIMEIRO (assim ele aparece mesmo se as imagens falharem)
+  try{
+    const frame = await evFinal_ensureFrame();
+    ctx.drawImage(frame, 0, 0, canvas.width, canvas.height);
+  }catch(e){
+    console.error("Falha ao carregar o frame:", e);
+  }
+
+  // 2) TENTA DESENHAR A IMAGEM "ANTES" (sem deixar erro matar o render)
   const beforeUrl = evFinal.beforeUrls[evFinal.beforeIdx] || "";
   if (beforeUrl){
-    const obj = await evFinal_fetchObjectUrl(beforeUrl);
-    const img = await evFinal_loadImg(obj);
-    evFinal_drawCover(ctx, img, LEFT.x, LEFT.y, LEFT.w, LEFT.h, evFinal.beforeZoom);
-    URL.revokeObjectURL(obj);
+    try{
+      const obj = await evFinal_fetchObjectUrl(beforeUrl);
+      const img = await evFinal_loadImg(obj);
+      evFinal_drawCover(ctx, img, LEFT.x, LEFT.y, LEFT.w, LEFT.h, evFinal.beforeZoom);
+      URL.revokeObjectURL(obj);
+
+      // redesenha o frame por cima (mantém o frame sempre no topo)
+      const frame = await evFinal_ensureFrame();
+      ctx.drawImage(frame, 0, 0, canvas.width, canvas.height);
+    }catch(e){
+      console.error("Falha ao carregar imagem ANTES:", e);
+      // não faz nada — frame continua aparecendo
+    }
   }
 
-  // AFTER (11 meses)
+  // 3) TENTA DESENHAR A IMAGEM "DEPOIS" (11 meses)
   const afterUrl = evFinal.afterUrls[evFinal.afterIdx] || "";
   if (afterUrl){
-    const obj = await evFinal_fetchObjectUrl(afterUrl);
-    const img = await evFinal_loadImg(obj);
-    evFinal_drawCover(ctx, img, RIGHT.x, RIGHT.y, RIGHT.w, RIGHT.h, evFinal.afterZoom);
-    URL.revokeObjectURL(obj);
-  }
+    try{
+      const obj = await evFinal_fetchObjectUrl(afterUrl);
+      const img = await evFinal_loadImg(obj);
+      evFinal_drawCover(ctx, img, RIGHT.x, RIGHT.y, RIGHT.w, RIGHT.h, evFinal.afterZoom);
+      URL.revokeObjectURL(obj);
 
-  // Frame por cima
-  const frame = await evFinal_ensureFrame();
-  ctx.drawImage(frame, 0, 0, canvas.width, canvas.height);
+      // redesenha o frame por cima (mantém o frame sempre no topo)
+      const frame = await evFinal_ensureFrame();
+      ctx.drawImage(frame, 0, 0, canvas.width, canvas.height);
+    }catch(e){
+      console.error("Falha ao carregar imagem DEPOIS:", e);
+    }
+  }
 }
+
 
 // mostra/esconde e liga os botões (só quando concluído)
 function evFinal_showIfDone(){
@@ -2271,6 +2293,7 @@ if (chkAut){
   </div>
 </body>
 </html>
+
 
 
 
