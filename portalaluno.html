@@ -1981,15 +1981,12 @@ window.scrollTo({ top: 0, behavior: "smooth" });
 
 // funcao do gerador
 
-  // =========================
-// EVOLUÇÃO — GERADOR DE IMAGEM FINAL
-// =========================
 
-// 1) caminho do frame
-// Se seu frame estiver em assets, troque para: "assets/frameevolucao.png"
+// =========================
+// EVOLUÇÃO — GERADOR FINAL (SUAVE + CLIP + SÓ ZOOM)
+// =========================
 const EV_FINAL_FRAME_SRC = "assets/frameevolucao.png";
 
-// 2) estado do gerador
 const evFinal = {
   frameImg: null,
   beforeIdx: 0,
@@ -1998,19 +1995,19 @@ const evFinal = {
   afterZoom: 1,
   beforeUrls: [],
   afterUrls: [],
+  _imgCache: new Map(), // url -> Image
+  _raf: 0,
 };
 
-// --- helpers de imagem ---
-async function evFinal_loadImg(src){
-  return await new Promise((res, rej)=>{
+function evFinal_loadImg(src){
+  return new Promise((res, rej)=>{
     const img = new Image();
-    img.crossOrigin = "anonymous"; // ✅ importante p/ canvas
+    img.crossOrigin = "anonymous";
     img.onload = ()=>res(img);
     img.onerror = rej;
     img.src = src;
   });
 }
-
 
 function evFinal_driveId(url){
   const s = String(url||"").trim();
@@ -2020,39 +2017,28 @@ function evFinal_driveId(url){
   if (m) return m[1];
   return "";
 }
-async function evFinal_fetchObjectUrl(url){
-  const id = evFinal_driveId(url);
-  if (!id) throw new Error("URL sem fileId do Drive.");
 
-  const api = `${API_URL}?action=getEvoImageB64&id=${encodeURIComponent(id)}`;
-  const r = await fetch(api, { cache: "no-store" });
-  if (!r.ok) throw new Error(`API imagem falhou: HTTP ${r.status}`);
+// ✅ usa seu Apps Script (getEvoImageB64) para devolver dataURL
+async function evFinal_getDataUrl(fileUrl){
+  const id = evFinal_driveId(fileUrl);
+  if (!id) return fileUrl; // fallback
 
+  const url = `${API_URL}?action=getEvoImageB64&id=${encodeURIComponent(id)}`;
+  const r = await fetch(url, { cache:"no-store" });
   const d = await r.json();
-  if (!d.ok || !d.b64) throw new Error(d.message || "Sem b64");
-
-  const bin = atob(d.b64);
-  const bytes = new Uint8Array(bin.length);
-  for (let i=0; i<bin.length; i++) bytes[i] = bin.charCodeAt(i);
-
-  const blob = new Blob([bytes], { type: d.mime || "image/jpeg" });
-  return URL.createObjectURL(blob);
+  if (!d || !d.ok || !d.b64) throw new Error("getEvoImageB64_failed");
+  const mime = d.mime || "image/jpeg";
+  return `data:${mime};base64,${d.b64}`;
 }
 
+async function evFinal_getImg(url){
+  if (!url) return null;
+  if (evFinal._imgCache.has(url)) return evFinal._imgCache.get(url);
 
-// desenha estilo "cover" (preenche o retângulo, centralizado)
-function evFinal_drawCover(ctx, img, dx, dy, dw, dh, zoom=1){
-  const iw = img.naturalWidth || img.width;
-  const ih = img.naturalHeight || img.height;
-  if (!iw || !ih) return;
-
-  const scale = Math.max(dw / iw, dh / ih) * (zoom || 1);
-  const sw = iw * scale;
-  const sh = ih * scale;
-  const sx = dx + (dw - sw) / 2;
-  const sy = dy + (dh - sh) / 2;
-
-  ctx.drawImage(img, sx, sy, sw, sh);
+  const dataUrl = await evFinal_getDataUrl(url);
+  const img = await evFinal_loadImg(dataUrl);
+  evFinal._imgCache.set(url, img);
+  return img;
 }
 
 async function evFinal_ensureFrame(){
@@ -2061,84 +2047,96 @@ async function evFinal_ensureFrame(){
   return evFinal.frameImg;
 }
 
-// renderiza o canvas
+// cover: sempre preenche o retângulo (sem deixar faixa branca)
+function evFinal_drawCover(ctx, img, dx, dy, dw, dh, zoom=1){
+  const iw = img.naturalWidth || img.width;
+  const ih = img.naturalHeight || img.height;
+  if (!iw || !ih) return;
+
+  const scale = Math.max(dw / iw, dh / ih) * (zoom || 1);
+  const sw = iw * scale;
+  const sh = ih * scale;
+
+  // centraliza
+  const sx = dx + (dw - sw) / 2;
+  const sy = dy + (dh - sh) / 2;
+
+  ctx.drawImage(img, sx, sy, sw, sh);
+}
+
+function evFinal_scheduleRender(){
+  if (evFinal._raf) cancelAnimationFrame(evFinal._raf);
+  evFinal._raf = requestAnimationFrame(()=>{
+    evFinal._raf = 0;
+    evFinal_render().catch(console.error);
+  });
+}
+
 async function evFinal_render(){
   const canvas = qs("#evFinalCanvas");
   if (!canvas) return;
   const ctx = canvas.getContext("2d");
 
-  // ÁREAS onde as fotos entram (ajuste fino depois se precisar)
-  const LEFT  = { x: 60,  y: 70,  w: 450, h: 860 };
-  const RIGHT = { x: 570, y: 70,  w: 450, h: 860 };
+  // ✅ ajuste só aqui se precisar “encaixar” no branco do frame
+  const LEFT  = { x: 70,  y: 125, w: 455, h: 860 };
+  const RIGHT = { x: 555, y: 125, w: 455, h: 860 };
 
   ctx.clearRect(0,0,canvas.width,canvas.height);
 
-  // 1) DESENHA O FRAME PRIMEIRO (assim ele aparece mesmo se as imagens falharem)
+  const beforeUrl = evFinal.beforeUrls[evFinal.beforeIdx] || "";
+  const afterUrl  = evFinal.afterUrls[evFinal.afterIdx]   || "";
+
+  // 1) desenha ANTES com CLIP (não vaza)
+  if (beforeUrl){
+    try{
+      const img = await evFinal_getImg(beforeUrl);
+      if (img){
+        ctx.save();
+        ctx.beginPath();
+        ctx.rect(LEFT.x, LEFT.y, LEFT.w, LEFT.h);
+        ctx.clip();
+        evFinal_drawCover(ctx, img, LEFT.x, LEFT.y, LEFT.w, LEFT.h, evFinal.beforeZoom);
+        ctx.restore();
+      }
+    }catch(e){ console.error("ANTES:", e); }
+  }
+
+  // 2) desenha DEPOIS com CLIP (não vaza)
+  if (afterUrl){
+    try{
+      const img = await evFinal_getImg(afterUrl);
+      if (img){
+        ctx.save();
+        ctx.beginPath();
+        ctx.rect(RIGHT.x, RIGHT.y, RIGHT.w, RIGHT.h);
+        ctx.clip();
+        evFinal_drawCover(ctx, img, RIGHT.x, RIGHT.y, RIGHT.w, RIGHT.h, evFinal.afterZoom);
+        ctx.restore();
+      }
+    }catch(e){ console.error("DEPOIS:", e); }
+  }
+
+  // 3) frame por cima
   try{
     const frame = await evFinal_ensureFrame();
     ctx.drawImage(frame, 0, 0, canvas.width, canvas.height);
   }catch(e){
-    console.error("Falha ao carregar o frame:", e);
-  }
-
-  // 2) TENTA DESENHAR A IMAGEM "ANTES" (sem deixar erro matar o render)
-  const beforeUrl = evFinal.beforeUrls[evFinal.beforeIdx] || "";
-  if (beforeUrl){
-    try{
-      const obj = await evFinal_fetchObjectUrl(beforeUrl);
-      const img = await evFinal_loadImg(obj);
-      evFinal_drawCover(ctx, img, LEFT.x, LEFT.y, LEFT.w, LEFT.h, evFinal.beforeZoom);
-      URL.revokeObjectURL(obj);
-
-      // redesenha o frame por cima (mantém o frame sempre no topo)
-      const frame = await evFinal_ensureFrame();
-      ctx.drawImage(frame, 0, 0, canvas.width, canvas.height);
-    }catch(e){
-      console.error("Falha ao carregar imagem ANTES:", e);
-      // não faz nada — frame continua aparecendo
-    }
-  }
-
-  // 3) TENTA DESENHAR A IMAGEM "DEPOIS" (11 meses)
-  const afterUrl = evFinal.afterUrls[evFinal.afterIdx] || "";
-  if (afterUrl){
-    try{
-      const obj = await evFinal_fetchObjectUrl(afterUrl);
-      const img = await evFinal_loadImg(obj);
-      evFinal_drawCover(ctx, img, RIGHT.x, RIGHT.y, RIGHT.w, RIGHT.h, evFinal.afterZoom);
-      URL.revokeObjectURL(obj);
-
-      // redesenha o frame por cima (mantém o frame sempre no topo)
-      const frame = await evFinal_ensureFrame();
-      ctx.drawImage(frame, 0, 0, canvas.width, canvas.height);
-    }catch(e){
-      console.error("Falha ao carregar imagem DEPOIS:", e);
-    }
+    console.error("FRAME:", e);
   }
 }
 
-
-
-
-
-  // mostra/esconde e liga os botões (só quando concluído)
+// mostra/esconde e liga os botões (só quando concluído)
 function evFinal_showIfDone(){
   const wrap = qs("#evFinalWrap");
   if (!wrap) return;
 
-  // concluído = não existe pendingStage
   const done = !bootstrap?.evolucao?.pendingStage;
-
-  if (!done){
-    wrap.classList.add("hidden");
-    return;
-  }
+  if (!done){ wrap.classList.add("hidden"); return; }
 
   const imgs = bootstrap?.evolucao?.images || {};
   evFinal.beforeUrls = Array.isArray(imgs.antes) ? imgs.antes : [];
   evFinal.afterUrls  = Array.isArray(imgs["11"]) ? imgs["11"] : [];
 
-  // só mostra se tiver pelo menos 1 imagem em cada lado
   if (!evFinal.beforeUrls.length || !evFinal.afterUrls.length){
     wrap.classList.add("hidden");
     return;
@@ -2146,74 +2144,37 @@ function evFinal_showIfDone(){
 
   wrap.classList.remove("hidden");
 
-  // índice inicial SEMPRE zero
   evFinal.beforeIdx = 0;
   evFinal.afterIdx  = 0;
 
-  // zoom inicial
   evFinal.beforeZoom = Number(qs("#evFinalZoomAntes")?.value || 1);
   evFinal.afterZoom  = Number(qs("#evFinalZoomDepois")?.value || 1);
 
-  // botões
-  qs("#evFinalPrevAntes").onclick = async () => {
+  // botões (trocar imagens)
+  qs("#evFinalPrevAntes").onclick = () => {
     evFinal.beforeIdx = (evFinal.beforeIdx + 1) % evFinal.beforeUrls.length;
-    await evFinal_render();
+    evFinal_scheduleRender();
   };
-
-  qs("#evFinalNextDepois").onclick = async () => {
+  qs("#evFinalNextDepois").onclick = () => {
     evFinal.afterIdx = (evFinal.afterIdx + 1) % evFinal.afterUrls.length;
-    await evFinal_render();
+    evFinal_scheduleRender();
   };
 
-  qs("#evFinalZoomAntes").oninput = async (e) => {
+  // sliders (SUAVE)
+  qs("#evFinalZoomAntes").oninput = (e) => {
     evFinal.beforeZoom = Number(e.target.value || 1);
-    await evFinal_render();
+    evFinal_scheduleRender();
   };
-
-  qs("#evFinalZoomDepois").oninput = async (e) => {
+  qs("#evFinalZoomDepois").oninput = (e) => {
     evFinal.afterZoom = Number(e.target.value || 1);
-    await evFinal_render();
+    evFinal_scheduleRender();
   };
 
-  // baixar
-  qs("#evFinalDownload").onclick = async () => {
-    const canvas = qs("#evFinalCanvas");
-    const blob = await new Promise(res => canvas.toBlob(res, "image/png", 1));
-    const a = document.createElement("a");
-    a.href = URL.createObjectURL(blob);
-    a.download = "minha-evolucao.png";
-    document.body.appendChild(a);
-    a.click();
-    a.remove();
-    setTimeout(()=>URL.revokeObjectURL(a.href), 1500);
-  };
-
-  // compartilhar (quando suportado)
-  qs("#evFinalShare").onclick = async () => {
-    const canvas = qs("#evFinalCanvas");
-    const blob = await new Promise(res => canvas.toBlob(res, "image/png", 1));
-    const file = new File([blob], "minha-evolucao.png", { type:"image/png" });
-
-    if (navigator.share && navigator.canShare && navigator.canShare({ files:[file] })){
-      await navigator.share({ files:[file], title:"Minha evolução", text:"Minha evolução no curso" });
-      return;
-    }
-
-    // fallback: download
-    const a = document.createElement("a");
-    a.href = URL.createObjectURL(blob);
-    a.download = "minha-evolucao.png";
-    document.body.appendChild(a);
-    a.click();
-    a.remove();
-    setTimeout(()=>URL.revokeObjectURL(a.href), 1500);
-  };
-
-  // ✅ desenha automaticamente assim que aparece
-  setTimeout(() => {
-    evFinal_render().catch(console.error);
-  }, 0);
+  // render imediato
+  evFinal_scheduleRender();
 }
+
+
 
 
   
@@ -2308,6 +2269,7 @@ if (chkAut){
   </div>
 </body>
 </html>
+
 
 
 
