@@ -1896,8 +1896,18 @@ if (!d.ok){
 }
 
 
-// atualiza bootstrap.evolucao com a resposta
-if (d.evolucao) bootstrap.evolucao = d.evolucao;
+// atualiza bootstrap.evolucao com a resposta (SEM PERDER comments)
+if (d.evolucao){
+  const prevEv = (bootstrap && bootstrap.evolucao) ? bootstrap.evolucao : null;
+
+  bootstrap.evolucao = {
+    ...(prevEv || {}),      // mantém comments e qualquer campo já existente
+    ...d.evolucao,          // aplica o estado novo vindo do servidor
+    comments: (prevEv && prevEv.comments) ? prevEv.comments : (d.evolucao.comments || null)
+  };
+}
+await refreshBootstrap(); // já recalcula allowUpload/tokens etc.
+
 
 // ✅ grava a confirmação (para sobreviver ao re-render)
 __evLastSuccess = {
@@ -2021,6 +2031,7 @@ if (chkAut){
   </div>
 </body>
 </html>
+
 
 
 
