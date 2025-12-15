@@ -1959,7 +1959,9 @@ if (d.evolucao){
     comments: (prevEv && prevEv.comments) ? prevEv.comments : (d.evolucao.comments || null)
   };
 }
-await refreshBootstrap(); // já recalcula allowUpload/tokens etc.
+// ✅ só atualiza allowUpload/tokens/feedback, sem sobrescrever bootstrap.evolucao recém-retornado
+refreshBootstrap().catch(console.error);
+
 
 
 // ✅ grava a confirmação (para sobreviver ao re-render)
@@ -2061,18 +2063,44 @@ function evFinal_driveId(url){
   return "";
 }
 
-// ⚠️ usa seu Apps Script (getEvoImageB64) para virar DataURL
+async function fetchJsonWithTimeout(url, ms = 20000){
+  const ctl = new AbortController();
+  const t = setTimeout(() => ctl.abort(), ms);
+
+  try{
+    const r = await fetch(url, { cache: "no-store", signal: ctl.signal });
+    if (!r.ok) throw new Error(`HTTP ${r.status}`);
+    return await r.json();
+  } finally {
+    clearTimeout(t);
+  }
+}
+
 async function evFinal_getDataUrl(fileUrl){
   const id = evFinal_driveId(fileUrl);
   if (!id) return fileUrl;
 
-  const url = `${API_URL}?action=getEvoImageB64&id=${encodeURIComponent(id)}`;
-  const r = await fetch(url, { cache:"no-store" });
-  const d = await r.json();
-  if (!d || !d.ok || !d.b64) throw new Error("getEvoImageB64_failed");
-  const mime = d.mime || "image/jpeg";
-  return `data:${mime};base64,${d.b64}`;
+  const tries = 3;
+  let lastErr = null;
+
+  for (let i = 0; i < tries; i++){
+    try{
+      const url = `${API_URL}?action=getEvoImageB64&id=${encodeURIComponent(id)}&t=${Date.now()}_${i}`;
+      const d = await fetchJsonWithTimeout(url, 20000);
+
+      if (!d || !d.ok || !d.b64) throw new Error("getEvoImageB64_failed");
+      const mime = d.mime || "image/jpeg";
+      return `data:${mime};base64,${d.b64}`;
+    } catch (e){
+      lastErr = e;
+      await new Promise(r => setTimeout(r, 600 * (i + 1)));
+    }
+  }
+
+  console.warn("evFinal_getDataUrl falhou, usando URL original:", lastErr);
+  return fileUrl;
 }
+
 
 async function evFinal_getImg(originalUrl){
   if (!originalUrl) return null;
@@ -2129,30 +2157,51 @@ function evFinal_setCardVisible(visible){
   wrap.classList.toggle("hidden", !visible);
 }
 
-// ✅ preload de tudo (frame + todas as imgs antes + todas as imgs 11)
-// Só mostra o card quando terminar (pra não “piscar” e não demorar na troca)
+function evFinal_setInlineStatus(text){
+  const wrap = qs("#evFinalWrap");
+  if (!wrap) return;
+
+  let el = qs("#evFinalInlineStatus");
+  if (!el){
+    el = document.createElement("div");
+    el.id = "evFinalInlineStatus";
+    el.className = "hint";
+    el.style.marginTop = "10px";
+    el.style.textAlign = "center";
+    wrap.querySelector(".ev-block")?.appendChild(el);
+  }
+
+  if (!text){
+    el.style.display = "none";
+    el.textContent = "";
+  } else {
+    el.style.display = "block";
+    el.textContent = text;
+  }
+}
+
 async function evFinal_preloadAll(){
   if (evFinal._loading) return;
   evFinal._loading = true;
 
-  // se preferir, pode NÃO usar overlay global aqui. Mas você pediu pra esconder o card:
-  evFinal_setCardVisible(false);
-  setLoading(true, "Carregando gerador da evolução...");
+  // ✅ O gerador SÓ vai ser chamado quando concluir (pendingStage vazio).
+  // Aqui a gente só evita travar a tela com overlay eterno.
+  evFinal_setCardVisible(true);
+  evFinal_setInlineStatus("Carregando imagens do gerador…");
 
   try{
     await evFinal_ensureFrame();
 
     const list = [...new Set([...(evFinal.beforeUrls||[]), ...(evFinal.afterUrls||[])])];
-    // 3 imagens? tranquilo preloadar todas
     await Promise.all(list.map(u => evFinal_getImg(u).catch(()=>null)));
   } finally {
-    setLoading(false);
     evFinal._loading = false;
+    evFinal_setInlineStatus("");
   }
 
-  evFinal_setCardVisible(true);
   evFinal_scheduleRender();
 }
+
 
 // ✅ desenha com máscara correta (duas janelas)
 async function evFinal_render(){
@@ -2453,6 +2502,7 @@ if (chkAut){
   </div>
 </body>
 </html>
+
 
 
 
