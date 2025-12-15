@@ -2004,11 +2004,13 @@ const evFinal = {
 async function evFinal_loadImg(src){
   return await new Promise((res, rej)=>{
     const img = new Image();
+    img.crossOrigin = "anonymous"; // ✅ importante p/ canvas
     img.onload = ()=>res(img);
     img.onerror = rej;
     img.src = src;
   });
 }
+
 
 function evFinal_driveId(url){
   const s = String(url||"").trim();
@@ -2022,8 +2024,12 @@ function evFinal_driveId(url){
 function evFinal_driveDirect(url){
   const id = evFinal_driveId(url);
   if (!id) return url;
-  return `https://drive.google.com/uc?export=download&id=${id}`;
+
+  // ✅ usa thumbnail (normalmente funciona melhor no browser do que uc?export=download)
+  // tamanho alto para ficar bom no canvas
+  return `https://drive.google.com/thumbnail?id=${id}&sz=w2000`;
 }
+
 
 async function evFinal_fetchObjectUrl(url){
   const direct = evFinal_driveDirect(url);
@@ -2293,6 +2299,7 @@ if (chkAut){
   </div>
 </body>
 </html>
+
 
 
 
