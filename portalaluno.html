@@ -917,18 +917,6 @@ async function refreshBootstrap(){
     const resp = await fetch(url, { cache: "no-store" });
     if (!resp.ok) throw new Error(`HTTP ${resp.status}`);
     const data = await resp.json() || {};
-// ✅ manter dados “lentos” também atualizados
-bootstrap.dataInicioISO = data.dataInicioISO ?? bootstrap.dataInicioISO ?? "";
-
-// (opcional mas recomendado) se o backend mandar evolucao, mantenha também
-if (data.evolucao && typeof data.evolucao === "object") {
-  const prevEv = bootstrap.evolucao || null;
-  bootstrap.evolucao = {
-    ...(prevEv || {}),
-    ...data.evolucao,
-    comments: (prevEv && prevEv.comments) ? prevEv.comments : (data.evolucao.comments || null),
-  };
-}
 
     if (!bootstrap || typeof bootstrap !== "object") bootstrap = {};
     bootstrap.allowUpload = !!data.allowUpload;
@@ -2030,8 +2018,6 @@ const evFinal = {
   afterPan: 0.5,
   beforeUrls: [],
   afterUrls: [],
-  leftLabel: "Antes",     // ✅ ADICIONE
-  rightLabel: "",         // ✅ ADICIONE
   _imgCache: new Map(),
   _loading: false,
   _raf: 0,
@@ -2055,29 +2041,6 @@ const EV_FINAL_MASK = {
   }
 };
 
-// ===== TEXTO NAS TARJAS (AJUSTE AQUI) =====
-const EV_FINAL_TEXT = {
-  LEFT: {
-    x: 270,        // ← posição horizontal (esquerda)
-    y: 1240,       // ← posição vertical
-    font: "900 44px Arial",
-    color: "#ffffff",
-    align: "center",
-    stroke: "rgba(0,0,0,0.4)",
-    strokeW: 6,
-    maxW: 420
-  },
-  RIGHT: {
-    x: 810,
-    y: 1240,
-    font: "900 52px Arial",
-    color: "#ffffff",
-    align: "center",
-    stroke: "rgba(0,0,0,0.4)",
-    strokeW: 6,
-    maxW: 300
-  }
-};
 
 
 
@@ -2153,44 +2116,6 @@ async function evFinal_ensureFrame(){
   if (evFinal.frameImg) return evFinal.frameImg;
   evFinal.frameImg = await evFinal_loadImg(EV_FINAL_FRAME_SRC);
   return evFinal.frameImg;
-}
-function evFinal_fmtMesAnoLongo(iso){
-  if (!iso) return "";
-  const d = new Date(iso);
-  if (isNaN(d)) return "";
-  const f = new Intl.DateTimeFormat("pt-BR", {
-    month: "short",
-    year: "numeric"
-  }).format(d);
-  return f.replace(".", "").toUpperCase().replace(" ", "/");
-}
-
-function evFinal_fmtMesAnoCurto(date){
-  const d = date instanceof Date ? date : new Date();
-  const f = new Intl.DateTimeFormat("pt-BR", {
-    month: "short",
-    year: "2-digit"
-  }).format(d);
-  return f.replace(".", "").toUpperCase().replace(" ", "/");
-}
-
-function evFinal_drawLabel(ctx, text, cfg){
-  if (!text) return;
-
-  ctx.save();
-  ctx.font = cfg.font;
-  ctx.fillStyle = cfg.color;
-  ctx.textAlign = cfg.align || "center";
-  ctx.textBaseline = "middle";
-
-  if (cfg.stroke){
-    ctx.lineWidth = cfg.strokeW || 4;
-    ctx.strokeStyle = cfg.stroke;
-    ctx.strokeText(text, cfg.x, cfg.y, cfg.maxW);
-  }
-
-  ctx.fillText(text, cfg.x, cfg.y, cfg.maxW);
-  ctx.restore();
 }
 
 // cover que preenche 100% e centraliza (focalY=0.5 => não “gruda no topo”)
@@ -2332,14 +2257,6 @@ evFinal_drawCover(ctx, img, right.x, right.y, right.w, right.h, evFinal.afterPan
   const frame = await evFinal_ensureFrame().catch(()=>null);
   if (frame) ctx.drawImage(frame, 0, 0, W, H);
 
-// ✅ GARANTE QUE O LADO DIREITO SEMPRE É “AGORA”
-evFinal.rightLabel = evFinal_fmtMesAnoCurto(new Date());
-
-  
-// textos nas tarjas
-evFinal_drawLabel(ctx, evFinal.leftLabel, EV_FINAL_TEXT.LEFT);
-evFinal_drawLabel(ctx, evFinal.rightLabel, EV_FINAL_TEXT.RIGHT);
-
   // (3) debug: desenha guias vermelhas pra acertar máscara
   if (EV_FINAL_DEBUG){
     ctx.save();
@@ -2394,17 +2311,6 @@ function evFinal_showIfDone(){
   }
 
   const imgs = bootstrap?.evolucao?.images || {};
-
-  // ===== TEXTOS DINÂMICOS =====
-const inicioISO = bootstrap?.dataInicioISO || "";
-
-evFinal.leftLabel = inicioISO
-  ? `Antes de ${evFinal_fmtMesAnoLongo(inicioISO)}`
-  : "Antes";
-
-evFinal.rightLabel = evFinal_fmtMesAnoCurto(new Date());
-
-  
   evFinal.beforeUrls = Array.isArray(imgs.antes) ? imgs.antes : [];
   evFinal.afterUrls  = Array.isArray(imgs["11"]) ? imgs["11"] : [];
 
@@ -2605,67 +2511,3 @@ if (chkAut){
   </div>
 </body>
 </html>
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
