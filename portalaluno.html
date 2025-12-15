@@ -2007,9 +2007,20 @@ const evFinal = {
 // Estes valores são para o canvas 1080x1350 e cobrem só os retângulos brancos.
 // Se ficar “curto” como na sua imagem com linhas vermelhas, aumente h e/ou ajuste y.
 const EV_FINAL_MASK = {
-  LEFT:  { x: 120, y: 95,  w: 410, h: 955 },
-  RIGHT: { x: 550, y: 95,  w: 410, h: 955 },
+  LEFT: {
+    x: 92,
+    y: 88,
+    w: 438,
+    h: 1004
+  },
+  RIGHT: {
+    x: 550,
+    y: 88,
+    w: 438,
+    h: 1004
+  }
 };
+
 
 function evFinal_loadImg(src){
   return new Promise((res, rej)=>{
@@ -2338,6 +2349,7 @@ if (chkAut){
   </div>
 </body>
 </html>
+
 
 
 
