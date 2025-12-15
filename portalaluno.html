@@ -1692,7 +1692,7 @@ function evEmptyText_(k, { pending, canInteract }){
   // 1) Se é a etapa pendente E está liberada (a pessoa vai enviar agora)
   if (k === pending && canInteract){
     if (k === "antes"){
-      return `${nome}, para compararmos o seu progresso ao longo do tempo, envie 3 artes que você fez antes de começar o curso.`;
+      return `${nome}, para compararmos o seu progresso ao longo do tempo, envie 3 artes que você fez antes de começar o curso. Não tem problema se você não gosta delas, faremos uma comparação daqui uns meses com a sua evolução!.`;
     }
     if (k === "2"){
       return `E aí, como estão sendo esses primeiros meses estudando desenho, ${nome}? Por enquanto você está entendendo as bases e os fundamentos. É normal ainda não termos grandes mudanças no nosso traço, ok? =) Mas ainda assim vamos registrar o progresso!`;
@@ -2562,6 +2562,7 @@ if (chkAut){
   </div>
 </body>
 </html>
+
 
 
 
