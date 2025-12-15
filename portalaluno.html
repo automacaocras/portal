@@ -1983,9 +1983,12 @@ window.scrollTo({ top: 0, behavior: "smooth" });
 
 
 // =========================
-// EVOLUÇÃO — GERADOR FINAL (SUAVE + CLIP + SÓ ZOOM)
+// EVOLUÇÃO — GERADOR FINAL (COM PRELOAD + CACHE + MÁSCARA CORRETA)
 // =========================
 const EV_FINAL_FRAME_SRC = "assets/frameevolucao.png";
+
+// ✅ Ligue para ver guias vermelhas e ajustar x/y/w/h da máscara
+const EV_FINAL_DEBUG = true;
 
 const evFinal = {
   frameImg: null,
@@ -1995,8 +1998,17 @@ const evFinal = {
   afterZoom: 1,
   beforeUrls: [],
   afterUrls: [],
-  _imgCache: new Map(), // url -> Image
+  _imgCache: new Map(),   // originalUrl -> Image
+  _loading: false,
   _raf: 0,
+};
+
+// ✅ janela real do “branco” (AJUSTE FINO AQUI)
+// Estes valores são para o canvas 1080x1350 e cobrem só os retângulos brancos.
+// Se ficar “curto” como na sua imagem com linhas vermelhas, aumente h e/ou ajuste y.
+const EV_FINAL_MASK = {
+  LEFT:  { x: 120, y: 95,  w: 410, h: 955 },
+  RIGHT: { x: 550, y: 95,  w: 410, h: 955 },
 };
 
 function evFinal_loadImg(src){
@@ -2018,10 +2030,10 @@ function evFinal_driveId(url){
   return "";
 }
 
-// ✅ usa seu Apps Script (getEvoImageB64) para devolver dataURL
+// ⚠️ usa seu Apps Script (getEvoImageB64) para virar DataURL
 async function evFinal_getDataUrl(fileUrl){
   const id = evFinal_driveId(fileUrl);
-  if (!id) return fileUrl; // fallback
+  if (!id) return fileUrl;
 
   const url = `${API_URL}?action=getEvoImageB64&id=${encodeURIComponent(id)}`;
   const r = await fetch(url, { cache:"no-store" });
@@ -2031,13 +2043,13 @@ async function evFinal_getDataUrl(fileUrl){
   return `data:${mime};base64,${d.b64}`;
 }
 
-async function evFinal_getImg(url){
-  if (!url) return null;
-  if (evFinal._imgCache.has(url)) return evFinal._imgCache.get(url);
+async function evFinal_getImg(originalUrl){
+  if (!originalUrl) return null;
+  if (evFinal._imgCache.has(originalUrl)) return evFinal._imgCache.get(originalUrl);
 
-  const dataUrl = await evFinal_getDataUrl(url);
+  const dataUrl = await evFinal_getDataUrl(originalUrl);
   const img = await evFinal_loadImg(dataUrl);
-  evFinal._imgCache.set(url, img);
+  evFinal._imgCache.set(originalUrl, img);
   return img;
 }
 
@@ -2047,8 +2059,8 @@ async function evFinal_ensureFrame(){
   return evFinal.frameImg;
 }
 
-// cover: sempre preenche o retângulo (sem deixar faixa branca)
-function evFinal_drawCover(ctx, img, dx, dy, dw, dh, zoom=1){
+// cover que preenche 100% e centraliza (focalY=0.5 => não “gruda no topo”)
+function evFinal_drawCover(ctx, img, dx, dy, dw, dh, zoom=1, focalY=0.5){
   const iw = img.naturalWidth || img.width;
   const ih = img.naturalHeight || img.height;
   if (!iw || !ih) return;
@@ -2057,9 +2069,9 @@ function evFinal_drawCover(ctx, img, dx, dy, dw, dh, zoom=1){
   const sw = iw * scale;
   const sh = ih * scale;
 
-  // centraliza
   const sx = dx + (dw - sw) / 2;
-  const sy = dy + (dh - sh) / 2;
+  const fy = Number.isFinite(focalY) ? focalY : 0.5;
+  const sy = dy + (dh - sh) * fy;
 
   ctx.drawImage(img, sx, sy, sw, sh);
 }
@@ -2072,66 +2084,133 @@ function evFinal_scheduleRender(){
   });
 }
 
+function evFinal_setCardVisible(visible){
+  const wrap = qs("#evFinalWrap");
+  if (!wrap) return;
+  wrap.classList.toggle("hidden", !visible);
+}
+
+// ✅ preload de tudo (frame + todas as imgs antes + todas as imgs 11)
+// Só mostra o card quando terminar (pra não “piscar” e não demorar na troca)
+async function evFinal_preloadAll(){
+  if (evFinal._loading) return;
+  evFinal._loading = true;
+
+  // se preferir, pode NÃO usar overlay global aqui. Mas você pediu pra esconder o card:
+  evFinal_setCardVisible(false);
+  setLoading(true, "Carregando gerador da evolução...");
+
+  try{
+    await evFinal_ensureFrame();
+
+    const list = [...new Set([...(evFinal.beforeUrls||[]), ...(evFinal.afterUrls||[])])];
+    // 3 imagens? tranquilo preloadar todas
+    await Promise.all(list.map(u => evFinal_getImg(u).catch(()=>null)));
+  } finally {
+    setLoading(false);
+    evFinal._loading = false;
+  }
+
+  evFinal_setCardVisible(true);
+  evFinal_scheduleRender();
+}
+
+// ✅ desenha com máscara correta (duas janelas)
 async function evFinal_render(){
   const canvas = qs("#evFinalCanvas");
   if (!canvas) return;
   const ctx = canvas.getContext("2d");
+  const W = canvas.width, H = canvas.height;
 
-  // ✅ ajuste só aqui se precisar “encaixar” no branco do frame
-  const LEFT  = { x: 70,  y: 125, w: 455, h: 860 };
-  const RIGHT = { x: 555, y: 125, w: 455, h: 860 };
+  ctx.clearRect(0,0,W,H);
 
-  ctx.clearRect(0,0,canvas.width,canvas.height);
+  const left  = EV_FINAL_MASK.LEFT;
+  const right = EV_FINAL_MASK.RIGHT;
 
+  // (1) desenha as imagens dentro do CLIP
   const beforeUrl = evFinal.beforeUrls[evFinal.beforeIdx] || "";
   const afterUrl  = evFinal.afterUrls[evFinal.afterIdx]   || "";
 
-  // 1) desenha ANTES com CLIP (não vaza)
   if (beforeUrl){
-    try{
-      const img = await evFinal_getImg(beforeUrl);
-      if (img){
-        ctx.save();
-        ctx.beginPath();
-        ctx.rect(LEFT.x, LEFT.y, LEFT.w, LEFT.h);
-        ctx.clip();
-        evFinal_drawCover(ctx, img, LEFT.x, LEFT.y, LEFT.w, LEFT.h, evFinal.beforeZoom);
-        ctx.restore();
-      }
-    }catch(e){ console.error("ANTES:", e); }
+    const img = await evFinal_getImg(beforeUrl).catch(()=>null);
+    if (img){
+      ctx.save();
+      ctx.beginPath();
+      ctx.rect(left.x, left.y, left.w, left.h);
+      ctx.clip();
+      evFinal_drawCover(ctx, img, left.x, left.y, left.w, left.h, evFinal.beforeZoom, 0.5);
+      ctx.restore();
+    }
   }
 
-  // 2) desenha DEPOIS com CLIP (não vaza)
   if (afterUrl){
-    try{
-      const img = await evFinal_getImg(afterUrl);
-      if (img){
-        ctx.save();
-        ctx.beginPath();
-        ctx.rect(RIGHT.x, RIGHT.y, RIGHT.w, RIGHT.h);
-        ctx.clip();
-        evFinal_drawCover(ctx, img, RIGHT.x, RIGHT.y, RIGHT.w, RIGHT.h, evFinal.afterZoom);
-        ctx.restore();
-      }
-    }catch(e){ console.error("DEPOIS:", e); }
+    const img = await evFinal_getImg(afterUrl).catch(()=>null);
+    if (img){
+      ctx.save();
+      ctx.beginPath();
+      ctx.rect(right.x, right.y, right.w, right.h);
+      ctx.clip();
+      evFinal_drawCover(ctx, img, right.x, right.y, right.w, right.h, evFinal.afterZoom, 0.5);
+      ctx.restore();
+    }
   }
 
-  // 3) frame por cima
-  try{
-    const frame = await evFinal_ensureFrame();
-    ctx.drawImage(frame, 0, 0, canvas.width, canvas.height);
-  }catch(e){
-    console.error("FRAME:", e);
+  // (2) frame por cima sempre
+  const frame = await evFinal_ensureFrame().catch(()=>null);
+  if (frame) ctx.drawImage(frame, 0, 0, W, H);
+
+  // (3) debug: desenha guias vermelhas pra acertar máscara
+  if (EV_FINAL_DEBUG){
+    ctx.save();
+    ctx.lineWidth = 6;
+    ctx.strokeStyle = "red";
+    ctx.strokeRect(left.x, left.y, left.w, left.h);
+    ctx.strokeRect(right.x, right.y, right.w, right.h);
+    ctx.restore();
   }
 }
 
+// troca de imagem sem “sumir tudo”
+// - se já está no cache, não usa overlay e troca instantânea
+// - se não estiver (caso preload falhe), mostra overlay só durante a busca
+async function evFinal_change(side){ // "before" | "after"
+  const isBefore = side === "before";
+  const arr = isBefore ? evFinal.beforeUrls : evFinal.afterUrls;
+  if (!arr || !arr.length) return;
+
+  const nextIdx = isBefore
+    ? (evFinal.beforeIdx + 1) % arr.length
+    : (evFinal.afterIdx + 1) % arr.length;
+
+  const nextUrl = arr[nextIdx];
+
+  // se não tiver no cache, mostra overlay (ideal é nunca cair aqui, pois preload carrega tudo)
+  const hasCache = evFinal._imgCache.has(nextUrl);
+
+  if (!hasCache) setLoading(true, "Carregando imagem...");
+  try{
+    await evFinal_getImg(nextUrl); // garante pronta
+    if (isBefore) evFinal.beforeIdx = nextIdx;
+    else evFinal.afterIdx = nextIdx;
+
+    evFinal_scheduleRender();
+  } finally {
+    if (!hasCache) setLoading(false);
+  }
+}
+
+// =========================
 // mostra/esconde e liga os botões (só quando concluído)
+// =========================
 function evFinal_showIfDone(){
   const wrap = qs("#evFinalWrap");
   if (!wrap) return;
 
   const done = !bootstrap?.evolucao?.pendingStage;
-  if (!done){ wrap.classList.add("hidden"); return; }
+  if (!done){
+    wrap.classList.add("hidden");
+    return;
+  }
 
   const imgs = bootstrap?.evolucao?.images || {};
   evFinal.beforeUrls = Array.isArray(imgs.antes) ? imgs.antes : [];
@@ -2141,6 +2220,34 @@ function evFinal_showIfDone(){
     wrap.classList.add("hidden");
     return;
   }
+
+  // configura estado inicial
+  evFinal.beforeIdx = 0;
+  evFinal.afterIdx  = 0;
+  evFinal.beforeZoom = Number(qs("#evFinalZoomAntes")?.value || 1);
+  evFinal.afterZoom  = Number(qs("#evFinalZoomDepois")?.value || 1);
+
+  // liga handlers (sem async pesado no oninput)
+  qs("#evFinalPrevAntes").onclick = ()=> evFinal_change("before");
+  qs("#evFinalNextDepois").onclick = ()=> evFinal_change("after");
+
+  qs("#evFinalZoomAntes").oninput = (e)=>{
+    evFinal.beforeZoom = Number(e.target.value || 1);
+    evFinal_scheduleRender();
+  };
+  qs("#evFinalZoomDepois").oninput = (e)=>{
+    evFinal.afterZoom = Number(e.target.value || 1);
+    evFinal_scheduleRender();
+  };
+
+  // ✅ Preload antes de mostrar o card
+  evFinal_preloadAll().catch(console.error);
+}
+
+
+
+
+  
 
   wrap.classList.remove("hidden");
 
@@ -2269,6 +2376,7 @@ if (chkAut){
   </div>
 </body>
 </html>
+
 
 
 
