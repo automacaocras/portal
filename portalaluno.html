@@ -2117,7 +2117,10 @@ async function evFinal_render(){
 }
 
 
-// mostra/esconde e liga os botões (só quando concluído)
+
+
+
+  // mostra/esconde e liga os botões (só quando concluído)
 function evFinal_showIfDone(){
   const wrap = qs("#evFinalWrap");
   if (!wrap) return;
@@ -2142,9 +2145,11 @@ function evFinal_showIfDone(){
 
   wrap.classList.remove("hidden");
 
-  // reset estado inicial
+  // índice inicial SEMPRE zero
   evFinal.beforeIdx = 0;
   evFinal.afterIdx  = 0;
+
+  // zoom inicial
   evFinal.beforeZoom = Number(qs("#evFinalZoomAntes")?.value || 1);
   evFinal.afterZoom  = Number(qs("#evFinalZoomDepois")?.value || 1);
 
@@ -2203,9 +2208,12 @@ function evFinal_showIfDone(){
     setTimeout(()=>URL.revokeObjectURL(a.href), 1500);
   };
 
-  // desenha primeira vez
-  evFinal_render().catch(console.error);
+  // ✅ desenha automaticamente assim que aparece
+  setTimeout(() => {
+    evFinal_render().catch(console.error);
+  }, 0);
 }
+
 
   
 function abrirEvolucao(){
@@ -2299,6 +2307,7 @@ if (chkAut){
   </div>
 </body>
 </html>
+
 
 
 
