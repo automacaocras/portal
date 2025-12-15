@@ -1988,7 +1988,7 @@ window.scrollTo({ top: 0, behavior: "smooth" });
 const EV_FINAL_FRAME_SRC = "assets/frameevolucao.png";
 
 // ✅ Ligue para ver guias vermelhas e ajustar x/y/w/h da máscara
-const EV_FINAL_DEBUG = true;
+const EV_FINAL_DEBUG = false;
 
 const evFinal = {
   frameImg: null,
@@ -2003,23 +2003,23 @@ const evFinal = {
   _raf: 0,
 };
 
-// ✅ janela real do “branco” (AJUSTE FINO AQUI)
-// Estes valores são para o canvas 1080x1350 e cobrem só os retângulos brancos.
-// Se ficar “curto” como na sua imagem com linhas vermelhas, aumente h e/ou ajuste y.
+
+// ✅ MÁSCARA FINAL — medidas reais do frame (1080x1350)
 const EV_FINAL_MASK = {
-  LEFT:  {
-    x: 10,        // margem esquerda
-    y: 10,        // margem superior
-    w: 510,       // largura do branco
-    h: 1179       // altura (1350 - 10 - 161)
+  LEFT: {
+    x: 10,          // margem esquerda
+    y: 10,          // margem superior
+    w: 536 - 10,    // até o centro, com leve folga
+    h: 1179         // 1350 - 10(top) - 161(bottom)
   },
   RIGHT: {
-    x: 560,       // 10 + 510 + 40
+    x: 536 + 10,    // centro + folga
     y: 10,
-    w: 510,
+    w: 1080 - (536 + 10) - 10, // até a borda direita
     h: 1179
   }
 };
+
 
 
 
@@ -2350,6 +2350,7 @@ if (chkAut){
   </div>
 </body>
 </html>
+
 
 
 
