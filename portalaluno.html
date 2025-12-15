@@ -538,7 +538,7 @@
     <div class="ev-stage-title" style="text-align:left;">Gerar imagem da sua evolução</div>
 
     <canvas id="evFinalCanvas" width="1080" height="1350"
-      style="width:100%;max-width:900px;border-radius:18px;display:block;margin:0 auto;"></canvas>
+  style="width:100%;max-width:520px;border-radius:18px;display:block;margin:0 auto;"></canvas>
 
     <div class="flex-row" style="margin-top:12px;">
       <button id="evFinalPrevAntes" class="btn-sec" type="button">Alterar imagem antes</button>
@@ -2020,24 +2020,25 @@ function evFinal_driveId(url){
   if (m) return m[1];
   return "";
 }
-
-function evFinal_driveDirect(url){
-  const id = evFinal_driveId(url);
-  if (!id) return url;
-
-  // ✅ usa thumbnail (normalmente funciona melhor no browser do que uc?export=download)
-  // tamanho alto para ficar bom no canvas
-  return `https://drive.google.com/thumbnail?id=${id}&sz=w2000`;
-}
-
-
 async function evFinal_fetchObjectUrl(url){
-  const direct = evFinal_driveDirect(url);
-  const r = await fetch(direct, { cache: "no-store" });
-  if (!r.ok) throw new Error(`Falha ao baixar imagem: HTTP ${r.status}`);
-  const blob = await r.blob();
+  const id = evFinal_driveId(url);
+  if (!id) throw new Error("URL sem fileId do Drive.");
+
+  const api = `${API_URL}?action=getEvoImageB64&id=${encodeURIComponent(id)}`;
+  const r = await fetch(api, { cache: "no-store" });
+  if (!r.ok) throw new Error(`API imagem falhou: HTTP ${r.status}`);
+
+  const d = await r.json();
+  if (!d.ok || !d.b64) throw new Error(d.message || "Sem b64");
+
+  const bin = atob(d.b64);
+  const bytes = new Uint8Array(bin.length);
+  for (let i=0; i<bin.length; i++) bytes[i] = bin.charCodeAt(i);
+
+  const blob = new Blob([bytes], { type: d.mime || "image/jpeg" });
   return URL.createObjectURL(blob);
 }
+
 
 // desenha estilo "cover" (preenche o retângulo, centralizado)
 function evFinal_drawCover(ctx, img, dx, dy, dw, dh, zoom=1){
@@ -2307,6 +2308,7 @@ if (chkAut){
   </div>
 </body>
 </html>
+
 
 
 
