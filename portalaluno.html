@@ -2246,44 +2246,6 @@ function evFinal_showIfDone(){
 
 
 
-
-  
-
-  wrap.classList.remove("hidden");
-
-  evFinal.beforeIdx = 0;
-  evFinal.afterIdx  = 0;
-
-  evFinal.beforeZoom = Number(qs("#evFinalZoomAntes")?.value || 1);
-  evFinal.afterZoom  = Number(qs("#evFinalZoomDepois")?.value || 1);
-
-  // botões (trocar imagens)
-  qs("#evFinalPrevAntes").onclick = () => {
-    evFinal.beforeIdx = (evFinal.beforeIdx + 1) % evFinal.beforeUrls.length;
-    evFinal_scheduleRender();
-  };
-  qs("#evFinalNextDepois").onclick = () => {
-    evFinal.afterIdx = (evFinal.afterIdx + 1) % evFinal.afterUrls.length;
-    evFinal_scheduleRender();
-  };
-
-  // sliders (SUAVE)
-  qs("#evFinalZoomAntes").oninput = (e) => {
-    evFinal.beforeZoom = Number(e.target.value || 1);
-    evFinal_scheduleRender();
-  };
-  qs("#evFinalZoomDepois").oninput = (e) => {
-    evFinal.afterZoom = Number(e.target.value || 1);
-    evFinal_scheduleRender();
-  };
-
-  // render imediato
-  evFinal_scheduleRender();
-}
-
-
-
-
   
 function abrirEvolucao(){
   if (!evEnabled()){
@@ -2376,6 +2338,7 @@ if (chkAut){
   </div>
 </body>
 </html>
+
 
 
 
