@@ -545,7 +545,13 @@
 <!-- ✅ GERADOR DE IMAGEM (só quando concluído) -->
 <div id="evFinalWrap" class="hidden" style="margin-top:16px;">
   <div class="ev-block" style="text-align:center;">
-    <div class="ev-stage-title" style="text-align:left;">Gerar imagem da sua evolução</div>
+   <div class="ev-stage-title" style="text-align:left;">Gerar imagem da sua evolução</div>
+
+<div class="hint" style="margin:10px 0 0; text-align:left;">
+  <span data-nome>{NOME}</span>, você evoluiu tanto que vale a pena compartilhar a sua dedicação, não acha?
+  Ajuste as suas artes aqui embaixo e compartilhe nas redes sociais! Lembre-se que o estudo nunca acaba, ok?
+</div>
+
 
     <canvas id="evFinalCanvas" width="1080" height="1350"
   style="width:100%;max-width:520px;border-radius:18px;display:block;margin:0 auto;"></canvas>
@@ -1667,7 +1673,49 @@ function formatDateBR_(iso){
   return `${dd}/${mm}/${yy}`;
 }
 
-  
+  function evUserName_(){
+  const full = String(bootstrap?.nome || "").trim();
+  const first = getFirstName(full);
+  return first || "aluno";
+}
+
+// texto do “banner” (faixa verde) quando a etapa está disponível para envio
+function evBannerText_(k){
+  if (k === "antes") return "Envie até 3 artes feitas antes de começar o curso";
+  return "Envie até 3 imagens";
+}
+
+// texto quando NÃO há imagens no card
+function evEmptyText_(k, { pending, canInteract }){
+  const nome = evUserName_();
+
+  // 1) Se é a etapa pendente E está liberada (a pessoa vai enviar agora)
+  if (k === pending && canInteract){
+    if (k === "antes"){
+      return `${nome}, para compararmos o seu progresso ao longo do tempo, envie 3 artes que você fez antes de começar o curso.`;
+    }
+    if (k === "2"){
+      return `E aí, como estão sendo esses primeiros meses estudando desenho, ${nome}? Por enquanto você está entendendo as bases e os fundamentos. É normal ainda não termos grandes mudanças no nosso traço, ok? =) Mas ainda assim vamos registrar o progresso!`;
+    }
+    if (k === "6"){
+      return `Se você se dedicou e estudou bastante, já conseguimos ver uma boa diferença. Arte mais estruturada, complexa e com vida! Consegue perceber isso, ${nome}?`;
+    }
+    if (k === "11"){
+      return `Nossa! Eu tenho certeza que o processo do desenho está muito claro na sua cabeça. Mesmo se tiver dificuldade, você consegue desenhar o que quiser se você tentar! E isso é incrível, ${nome}!`;
+    }
+  }
+
+  // 2) Se é a etapa pendente, MAS AINDA BLOQUEADA (mostra “quando fizer X meses…”)
+  if (k === pending && !canInteract){
+    if (k === "2")  return "Quando você fizer 2 meses de curso essa sessão será habilitada!";
+    if (k === "6")  return "Quando você fizer 6 meses de curso essa sessão será habilitada!";
+    if (k === "11") return "Quando você fizer 11 meses de curso essa sessão será habilitada!";
+  }
+
+  // fallback
+  return "Sem imagens nesta etapa.";
+}
+
 function evRenderPage(){
   __evState = bootstrap.evolucao;
 
@@ -1788,10 +1836,11 @@ thumbsWrap.innerHTML = visibleKeys.map(k => {
 
   // ✅ aviso só no bloco da etapa pendente e liberada
   const showBanner = (canInteract && pending === k);
+
   const banner = showBanner
     ? `<div class="ev-stage-banner">
          <span class="ev-badge ev-green">Disponível</span>
-         <span>Envie até 3 imagens da etapa: <strong>${evStageLabel(k)}</strong>.</span>
+         <span><strong>${evBannerText_(k)}</strong></span>
        </div>`
     : "";
 
@@ -1805,7 +1854,9 @@ thumbsWrap.innerHTML = visibleKeys.map(k => {
         }).join("")}
       </div>
     `
-    : `<p class="hint" style="margin:6px 0 0;">Sem imagens nesta etapa.</p>`;
+    : `<p class="hint" style="margin:6px 0 0;">${evEmptyText_(k, { pending, canInteract })}</p>`;
+
+
   const c = comments[k]; // null ou { text, dateISO }
 const commentHtml = (c && c.text)
   ? `
@@ -2511,3 +2562,4 @@ if (chkAut){
   </div>
 </body>
 </html>
+
