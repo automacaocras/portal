@@ -2179,15 +2179,20 @@ function evFinal_setInlineStatus(text){
     el.textContent = text;
   }
 }
-
-async function evFinal_preloadAll(){
+// ✅ Preload com overlay atrasado (2s) e sem “fundo branco”
+async function evFinal_preloadAll({ overlayDelayMs = 2000 } = {}){
   if (evFinal._loading) return;
   evFinal._loading = true;
 
-  // ✅ O gerador SÓ vai ser chamado quando concluir (pendingStage vazio).
-  // Aqui a gente só evita travar a tela com overlay eterno.
-  evFinal_setCardVisible(true);
-  evFinal_setInlineStatus("Carregando imagens do gerador…");
+  // some com o card pra não ficar branco
+  evFinal_setCardVisible(false);
+
+  // só liga o overlay depois de X ms (ex.: 2000ms)
+  let overlayOn = false;
+  const t = setTimeout(() => {
+    overlayOn = true;
+    setLoading(true, "Carregando gerador da evolução...");
+  }, overlayDelayMs);
 
   try{
     await evFinal_ensureFrame();
@@ -2195,10 +2200,13 @@ async function evFinal_preloadAll(){
     const list = [...new Set([...(evFinal.beforeUrls||[]), ...(evFinal.afterUrls||[])])];
     await Promise.all(list.map(u => evFinal_getImg(u).catch(()=>null)));
   } finally {
+    clearTimeout(t);
+    if (overlayOn) setLoading(false);
     evFinal._loading = false;
-    evFinal_setInlineStatus("");
   }
 
+  // só mostra quando tiver tudo pronto
+  evFinal_setCardVisible(true);
   evFinal_scheduleRender();
 }
 
@@ -2339,7 +2347,8 @@ qs("#evFinalZoomDepois").oninput = (e)=>{
 };
 
   // ✅ Preload antes de mostrar o card
-  evFinal_preloadAll().catch(console.error);
+evFinal_preloadAll({ overlayDelayMs: 2000 }).catch(console.error);
+
 }
 
   // =========================
@@ -2502,6 +2511,7 @@ if (chkAut){
   </div>
 </body>
 </html>
+
 
 
 
