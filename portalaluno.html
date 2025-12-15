@@ -917,6 +917,18 @@ async function refreshBootstrap(){
     const resp = await fetch(url, { cache: "no-store" });
     if (!resp.ok) throw new Error(`HTTP ${resp.status}`);
     const data = await resp.json() || {};
+// ✅ manter dados “lentos” também atualizados
+bootstrap.dataInicioISO = data.dataInicioISO ?? bootstrap.dataInicioISO ?? "";
+
+// (opcional mas recomendado) se o backend mandar evolucao, mantenha também
+if (data.evolucao && typeof data.evolucao === "object") {
+  const prevEv = bootstrap.evolucao || null;
+  bootstrap.evolucao = {
+    ...(prevEv || {}),
+    ...data.evolucao,
+    comments: (prevEv && prevEv.comments) ? prevEv.comments : (data.evolucao.comments || null),
+  };
+}
 
     if (!bootstrap || typeof bootstrap !== "object") bootstrap = {};
     bootstrap.allowUpload = !!data.allowUpload;
@@ -2319,6 +2331,11 @@ evFinal_drawCover(ctx, img, right.x, right.y, right.w, right.h, evFinal.afterPan
   // (2) frame por cima sempre
   const frame = await evFinal_ensureFrame().catch(()=>null);
   if (frame) ctx.drawImage(frame, 0, 0, W, H);
+
+// ✅ GARANTE QUE O LADO DIREITO SEMPRE É “AGORA”
+evFinal.rightLabel = evFinal_fmtMesAnoCurto(new Date());
+
+  
 // textos nas tarjas
 evFinal_drawLabel(ctx, evFinal.leftLabel, EV_FINAL_TEXT.LEFT);
 evFinal_drawLabel(ctx, evFinal.rightLabel, EV_FINAL_TEXT.RIGHT);
@@ -2588,6 +2605,7 @@ if (chkAut){
   </div>
 </body>
 </html>
+
 
 
 
