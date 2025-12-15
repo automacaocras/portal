@@ -2268,6 +2268,72 @@ qs("#evFinalZoomDepois").oninput = (e)=>{
   evFinal_preloadAll().catch(console.error);
 }
 
+  // =========================
+  // BAIXAR IMAGEM
+  // =========================
+  const btnDownload = qs("#evFinalDownload");
+  if (btnDownload){
+    btnDownload.onclick = async () => {
+      const canvas = qs("#evFinalCanvas");
+      if (!canvas) return;
+
+      const blob = await new Promise(res =>
+        canvas.toBlob(res, "image/png", 1)
+      );
+
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      a.href = url;
+      a.download = "minha-evolucao.png";
+      document.body.appendChild(a);
+      a.click();
+      a.remove();
+      setTimeout(() => URL.revokeObjectURL(url), 1500);
+    };
+  }
+
+  // =========================
+  // COMPARTILHAR IMAGEM
+  // =========================
+  const btnShare = qs("#evFinalShare");
+  if (btnShare){
+    btnShare.onclick = async () => {
+      const canvas = qs("#evFinalCanvas");
+      if (!canvas) return;
+
+      const blob = await new Promise(res =>
+        canvas.toBlob(res, "image/png", 1)
+      );
+
+      const file = new File([blob], "minha-evolucao.png", {
+        type: "image/png"
+      });
+
+      // Web Share API (celular)
+      if (
+        navigator.share &&
+        navigator.canShare &&
+        navigator.canShare({ files: [file] })
+      ){
+        await navigator.share({
+          files: [file],
+          title: "Minha evolução",
+          text: "Minha evolução no curso"
+        });
+        return;
+      }
+
+      // fallback: download
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      a.href = url;
+      a.download = "minha-evolucao.png";
+      document.body.appendChild(a);
+      a.click();
+      a.remove();
+      setTimeout(() => URL.revokeObjectURL(url), 1500);
+    };
+  }
 
 
   
@@ -2362,6 +2428,7 @@ if (chkAut){
   </div>
 </body>
 </html>
+
 
 
 
