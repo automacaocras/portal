@@ -1972,13 +1972,15 @@ __evLastSuccess = {
     </div>
   `
 };
-
 evRenderButton();
 
-// 🔴 força novo bootstrap antes de renderizar a evolução final
-await refreshBootstrap();
+// 🔴 NÃO chame refreshBootstrap aqui
+// o estado correto já está em bootstrap.evolucao (d.evolucao)
 
+// renderiza a página com o estado recém-atualizado
 evRenderPage();
+
+// 🔥 AGORA SIM o gerador aparece imediatamente
 evFinal_showIfDone();
 
 // garante que veja o topo
