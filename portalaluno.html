@@ -427,6 +427,51 @@
   max-width:420px;
 }
   
+/* ===== CreativeBox (bloco promo) ===== */
+.cb-box{
+  max-width:900px;
+  margin:18px auto 0;
+  text-align:center;
+}
+
+.cb-title{
+  font-weight:900;
+  margin:0 0 6px;
+  font-size:18px;
+}
+
+.cb-sub{
+  margin:0 0 10px;
+  color:#333;
+  font-weight:600;
+  line-height:1.25;
+}
+
+.cb-link{
+  display:inline-block;
+  text-decoration:none;
+  color:inherit;
+}
+
+.cb-img{
+  width:100%;
+  max-width:460px;   /* ajusta o “tamanho percebido” */
+  height:auto;
+  display:block;
+  margin:8px auto 0;
+  border-radius:14px;
+}
+
+.cb-link:focus-visible{
+  outline:3px solid rgba(0,0,0,.35);
+  outline-offset:6px;
+  border-radius:14px;
+}
+
+@media (max-width:520px){
+  .cb-title{ font-size:16px; }
+  .cb-img{ max-width:320px; }
+}
 
 
 </style>
@@ -476,6 +521,19 @@
 
   Minha evolução
 </button>
+
+      <!-- CREATIVEBOX -->
+<section class="cb-box" aria-label="CreativeBox">
+  <div class="cb-title">Chegou a nova edição da CreativeBox!</div>
+  <div class="cb-sub">
+    Uma caixa cheia de materiais artísticos de primeira linha.<br>
+    Clique na imagem e saiba mais!
+  </div>
+
+  <a class="cb-link" href="https://www.creativebox.art.br/" target="_blank" rel="noopener noreferrer">
+    <img class="cb-img" src="assets/cb.png" alt="CreativeBox - clique para saber mais">
+  </a>
+</section>
 
       
       <div class="links-uteis" style="text-align:center; margin-top:25px;">
@@ -2562,6 +2620,7 @@ if (chkAut){
   </div>
 </body>
 </html>
+
 
 
 
