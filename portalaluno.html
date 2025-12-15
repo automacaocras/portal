@@ -532,6 +532,43 @@
   </div>
 </div>
 
+<!-- ✅ GERADOR DE IMAGEM (só quando concluído) -->
+<div id="evFinalWrap" class="hidden" style="margin-top:16px;">
+  <div class="ev-block" style="text-align:center;">
+    <div class="ev-stage-title" style="text-align:left;">Gerar imagem da sua evolução</div>
+
+    <canvas id="evFinalCanvas" width="1080" height="1350"
+      style="width:100%;max-width:900px;border-radius:18px;display:block;margin:0 auto;"></canvas>
+
+    <div class="flex-row" style="margin-top:12px;">
+      <button id="evFinalPrevAntes" class="btn-sec" type="button">Alterar imagem antes</button>
+      <button id="evFinalNextDepois" class="btn-sec" type="button">Alterar imagem depois</button>
+    </div>
+
+    <div style="max-width:900px;margin:14px auto 0;text-align:left;">
+      <label style="margin:0 0 6px;">Ajustar imagem antes</label>
+      <input id="evFinalZoomAntes" type="range" min="0.7" max="2.5" step="0.01" value="1">
+
+      <label style="margin:12px 0 6px;">Ajustar imagem depois</label>
+      <input id="evFinalZoomDepois" type="range" min="0.7" max="2.5" step="0.01" value="1">
+    </div>
+
+    <div class="flex-row" style="margin-top:14px;">
+      <button id="evFinalDownload" class="btn-cta" type="button"
+        style="max-width:420px;background:#ff7a1a;color:#fff;">Baixar</button>
+      <button id="evFinalShare" class="btn-cta" type="button"
+        style="max-width:420px;background:#ff7a1a;color:#fff;">Compartilhar</button>
+    </div>
+
+    <div class="hint" style="margin-top:10px;">
+      Troque as imagens e ajuste o zoom antes de baixar/compartilhar.
+    </div>
+  </div>
+</div>
+
+
+
+    
     <button id="evVoltar" class="btn-back" type="button" data-busy style="margin-top:12px;">Voltar</button>
   </div>
 </section>
@@ -1817,6 +1854,7 @@ if (btnVoltar && root){
 }
 
 
+evFinal_showIfDone();
 
 
   // guarda etapa atual no DOM
@@ -1923,6 +1961,7 @@ __evLastSuccess = {
 // botão no dashboard muda e a página re-renderiza
 evRenderButton();
 evRenderPage();
+evFinal_showIfDone();
 
 // ✅ garante que o usuário veja o aviso no topo
 window.scrollTo({ top: 0, behavior: "smooth" });
@@ -1940,6 +1979,207 @@ window.scrollTo({ top: 0, behavior: "smooth" });
 }
 }
 
+// funcao do gerador
+
+  // =========================
+// EVOLUÇÃO — GERADOR DE IMAGEM FINAL
+// =========================
+
+// 1) caminho do frame
+// Se seu frame estiver em assets, troque para: "assets/frameevolucao.png"
+const EV_FINAL_FRAME_SRC = "assets/frameevolucao.png";
+
+// 2) estado do gerador
+const evFinal = {
+  frameImg: null,
+  beforeIdx: 0,
+  afterIdx: 0,
+  beforeZoom: 1,
+  afterZoom: 1,
+  beforeUrls: [],
+  afterUrls: [],
+};
+
+// --- helpers de imagem ---
+async function evFinal_loadImg(src){
+  return await new Promise((res, rej)=>{
+    const img = new Image();
+    img.onload = ()=>res(img);
+    img.onerror = rej;
+    img.src = src;
+  });
+}
+
+function evFinal_driveId(url){
+  const s = String(url||"").trim();
+  let m = s.match(/\/d\/([a-zA-Z0-9_-]{10,})/);
+  if (m) return m[1];
+  m = s.match(/[?&]id=([a-zA-Z0-9_-]{10,})/);
+  if (m) return m[1];
+  return "";
+}
+
+function evFinal_driveDirect(url){
+  const id = evFinal_driveId(url);
+  if (!id) return url;
+  return `https://drive.google.com/uc?export=download&id=${id}`;
+}
+
+async function evFinal_fetchObjectUrl(url){
+  const direct = evFinal_driveDirect(url);
+  const r = await fetch(direct, { cache: "no-store" });
+  if (!r.ok) throw new Error(`Falha ao baixar imagem: HTTP ${r.status}`);
+  const blob = await r.blob();
+  return URL.createObjectURL(blob);
+}
+
+// desenha estilo "cover" (preenche o retângulo, centralizado)
+function evFinal_drawCover(ctx, img, dx, dy, dw, dh, zoom=1){
+  const iw = img.naturalWidth || img.width;
+  const ih = img.naturalHeight || img.height;
+  if (!iw || !ih) return;
+
+  const scale = Math.max(dw / iw, dh / ih) * (zoom || 1);
+  const sw = iw * scale;
+  const sh = ih * scale;
+  const sx = dx + (dw - sw) / 2;
+  const sy = dy + (dh - sh) / 2;
+
+  ctx.drawImage(img, sx, sy, sw, sh);
+}
+
+async function evFinal_ensureFrame(){
+  if (evFinal.frameImg) return evFinal.frameImg;
+  evFinal.frameImg = await evFinal_loadImg(EV_FINAL_FRAME_SRC);
+  return evFinal.frameImg;
+}
+
+// renderiza o canvas
+async function evFinal_render(){
+  const canvas = qs("#evFinalCanvas");
+  if (!canvas) return;
+  const ctx = canvas.getContext("2d");
+
+  // ÁREAS onde as fotos entram (ajuste fino depois se precisar)
+  const LEFT  = { x: 60,  y: 70,  w: 450, h: 860 };
+  const RIGHT = { x: 570, y: 70,  w: 450, h: 860 };
+
+  ctx.clearRect(0,0,canvas.width,canvas.height);
+
+  // BEFORE (antes)
+  const beforeUrl = evFinal.beforeUrls[evFinal.beforeIdx] || "";
+  if (beforeUrl){
+    const obj = await evFinal_fetchObjectUrl(beforeUrl);
+    const img = await evFinal_loadImg(obj);
+    evFinal_drawCover(ctx, img, LEFT.x, LEFT.y, LEFT.w, LEFT.h, evFinal.beforeZoom);
+    URL.revokeObjectURL(obj);
+  }
+
+  // AFTER (11 meses)
+  const afterUrl = evFinal.afterUrls[evFinal.afterIdx] || "";
+  if (afterUrl){
+    const obj = await evFinal_fetchObjectUrl(afterUrl);
+    const img = await evFinal_loadImg(obj);
+    evFinal_drawCover(ctx, img, RIGHT.x, RIGHT.y, RIGHT.w, RIGHT.h, evFinal.afterZoom);
+    URL.revokeObjectURL(obj);
+  }
+
+  // Frame por cima
+  const frame = await evFinal_ensureFrame();
+  ctx.drawImage(frame, 0, 0, canvas.width, canvas.height);
+}
+
+// mostra/esconde e liga os botões (só quando concluído)
+function evFinal_showIfDone(){
+  const wrap = qs("#evFinalWrap");
+  if (!wrap) return;
+
+  // concluído = não existe pendingStage
+  const done = !bootstrap?.evolucao?.pendingStage;
+
+  if (!done){
+    wrap.classList.add("hidden");
+    return;
+  }
+
+  const imgs = bootstrap?.evolucao?.images || {};
+  evFinal.beforeUrls = Array.isArray(imgs.antes) ? imgs.antes : [];
+  evFinal.afterUrls  = Array.isArray(imgs["11"]) ? imgs["11"] : [];
+
+  // só mostra se tiver pelo menos 1 imagem em cada lado
+  if (!evFinal.beforeUrls.length || !evFinal.afterUrls.length){
+    wrap.classList.add("hidden");
+    return;
+  }
+
+  wrap.classList.remove("hidden");
+
+  // reset estado inicial
+  evFinal.beforeIdx = 0;
+  evFinal.afterIdx  = 0;
+  evFinal.beforeZoom = Number(qs("#evFinalZoomAntes")?.value || 1);
+  evFinal.afterZoom  = Number(qs("#evFinalZoomDepois")?.value || 1);
+
+  // botões
+  qs("#evFinalPrevAntes").onclick = async () => {
+    evFinal.beforeIdx = (evFinal.beforeIdx + 1) % evFinal.beforeUrls.length;
+    await evFinal_render();
+  };
+
+  qs("#evFinalNextDepois").onclick = async () => {
+    evFinal.afterIdx = (evFinal.afterIdx + 1) % evFinal.afterUrls.length;
+    await evFinal_render();
+  };
+
+  qs("#evFinalZoomAntes").oninput = async (e) => {
+    evFinal.beforeZoom = Number(e.target.value || 1);
+    await evFinal_render();
+  };
+
+  qs("#evFinalZoomDepois").oninput = async (e) => {
+    evFinal.afterZoom = Number(e.target.value || 1);
+    await evFinal_render();
+  };
+
+  // baixar
+  qs("#evFinalDownload").onclick = async () => {
+    const canvas = qs("#evFinalCanvas");
+    const blob = await new Promise(res => canvas.toBlob(res, "image/png", 1));
+    const a = document.createElement("a");
+    a.href = URL.createObjectURL(blob);
+    a.download = "minha-evolucao.png";
+    document.body.appendChild(a);
+    a.click();
+    a.remove();
+    setTimeout(()=>URL.revokeObjectURL(a.href), 1500);
+  };
+
+  // compartilhar (quando suportado)
+  qs("#evFinalShare").onclick = async () => {
+    const canvas = qs("#evFinalCanvas");
+    const blob = await new Promise(res => canvas.toBlob(res, "image/png", 1));
+    const file = new File([blob], "minha-evolucao.png", { type:"image/png" });
+
+    if (navigator.share && navigator.canShare && navigator.canShare({ files:[file] })){
+      await navigator.share({ files:[file], title:"Minha evolução", text:"Minha evolução no curso" });
+      return;
+    }
+
+    // fallback: download
+    const a = document.createElement("a");
+    a.href = URL.createObjectURL(blob);
+    a.download = "minha-evolucao.png";
+    document.body.appendChild(a);
+    a.click();
+    a.remove();
+    setTimeout(()=>URL.revokeObjectURL(a.href), 1500);
+  };
+
+  // desenha primeira vez
+  evFinal_render().catch(console.error);
+}
+
+  
 function abrirEvolucao(){
   if (!evEnabled()){
     alert("Recurso indisponível no momento.");
@@ -2031,6 +2271,7 @@ if (chkAut){
   </div>
 </body>
 </html>
+
 
 
 
