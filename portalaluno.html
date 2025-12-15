@@ -1711,19 +1711,22 @@ const STAGES = [
   { key:"11",    title:"Depois de 11 meses" },
 ];
 
-// visibilidade por tempo (novo)
+// visibilidade por PROGRESSO (sequência rígida)
 // - se concluído: mostra tudo
-// - senão: mostra até unlockedIndex
+// - senão: mostra só até a etapa PENDENTE (inclusive), mesmo que já tenha “tempo” para mais
+const order = ["antes","2","6","11"];
 let visibleKeys = [];
 
-if (!pending){
-  visibleKeys = STAGES.map(s => s.key);
+if (!pending) {
+  visibleKeys = order.slice(); // concluído => mostra tudo
 } else {
-  const maxIdx = Number(__evState.unlockedIndex ?? 0);
-  visibleKeys = STAGES.slice(0, Math.max(1, maxIdx + 1)).map(s => s.key);
+  const idx = order.indexOf(pending);
+  visibleKeys = order.slice(0, (idx === -1 ? 1 : idx + 1));
 }
 
+// segurança
 if (!visibleKeys.length) visibleKeys = ["antes"];
+
 
   
 
@@ -2018,6 +2021,7 @@ if (chkAut){
   </div>
 </body>
 </html>
+
 
 
 
