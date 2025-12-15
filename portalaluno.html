@@ -499,6 +499,14 @@
     <h2 id="evTitle">Minha evolução</h2>
     <p id="evSubtitle" class="hint" style="margin-top:6px;"></p>
 
+<!-- ✅ MENSAGEM FINAL (SÓ QUANDO CONCLUÍDO) -->
+<div id="evDoneMsg" class="hidden">
+  <div class="ev-done-box">
+    <strong>Você teve uma evolução incrível, <span data-nome>{NOME}</span>! 🎉</strong><br>
+    Parabéns pela sua dedicação!
+  </div>
+</div>
+    
     <!-- ✅ CONFIRMAÇÃO DE ENVIO (SEMPRE FORA DOS CARDS) -->
     <div id="evSuccessMsg" class="hidden"></div>
 
@@ -532,13 +540,7 @@
   <button id="evEnviar" class="btn-cta" type="button" data-busy style="margin-top:12px;">Enviar</button>
 </div>
 
-<!-- ✅ MENSAGEM FINAL (SÓ QUANDO CONCLUÍDO) -->
-<div id="evDoneMsg" class="hidden">
-  <div class="ev-done-box">
-    <strong>Você teve uma evolução incrível, <span data-nome>{NOME}</span>! 🎉</strong><br>
-    Parabéns pela sua dedicação!
-  </div>
-</div>
+
 
 <!-- ✅ GERADOR DE IMAGEM (só quando concluído) -->
 <div id="evFinalWrap" class="hidden" style="margin-top:16px;">
@@ -2449,6 +2451,7 @@ if (chkAut){
   </div>
 </body>
 </html>
+
 
 
 
